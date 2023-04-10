@@ -57,6 +57,7 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         userEntries[msg.sender] += entries;
         participants.push(msg.sender);
         for (uint256 i = 0; i < tokenIds.length; i++) {
+            require(ravenDaleNFT.ownerOf(tokenIds[i]) == msg.sender, "You are not the owner of the NFT");
             ravenDaleNFT.transferFrom(msg.sender, address(this), tokenIds[i]);
         }
     }
