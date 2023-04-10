@@ -6,7 +6,7 @@ import {IERC721Upgradeable} from
 "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import {Whitelist} from "./utils/WhiteListSigner.sol";
 
-contract ETHReceiver is OwnableUpgradeable, Whitelist {
+contract ParticipateInMint is OwnableUpgradeable, Whitelist {
 
     IERC721Upgradeable public ravenDaleNFT;
     enum currentState {NOT_STARTED, STARTED, ENDED}
@@ -18,8 +18,6 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
     
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => uint256) private userEntries;
-    mapping(address => bool) private isFreeParticipationClaimed;
-    
     
     function initialize (address _ravenDaleNFTAddress) external initializer {
         __Ownable_init();
@@ -34,7 +32,7 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
     
     function depositETH(whitelist memory signature, uint256 entries) external payable {
         require(getSigner(signature) == designatedSigner, "Invalid signature");
-        require(signature.entriesAllowed >= entries, "Invalid amount");
+        require(signature.entriesAllowed >= entries + userEntries[msg.sender], "Invalid amount");
         require(msg.value == entryPrice * entries, "Invalid amount");
         require(signature.userAddress == msg.sender, "Invalid user address");
         require(block.timestamp < signature.nonce + 3 minutes, "Expired Nonce");
@@ -50,26 +48,16 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
         require(getSigner(signature) == designatedSigner, "Invalid signature");
         uint256 ravenDaleNFTBalance = ravenDaleNFT.balanceOf(msg.sender);
         require(ravenDaleNFTBalance > 0, "You don't own any NFT");
-        require(ravenDaleNFTBalance >= tokenIds.length, "You are not staking all NFT");
+        require(ravenDaleNFTBalance == tokenIds.length, "You are not staking all NFT");
         require(State == currentState.STARTED, "Free participation not started");
-        require(!isFreeParticipationClaimed[msg.sender], "Already claimed");
         require(block.timestamp < signature.nonce + 3 minutes, "Expired Nonce");
         require(!isSignatureUsed[signature.signature], "Nonce already used");
-        require(signature.entriesAllowed >= entries, "Invalid amount");
-        isFreeParticipationClaimed[msg.sender] = true;
+        require(signature.entriesAllowed >= (entries + userEntries[msg.sender]), "Invalid amount");
         isSignatureUsed[signature.signature] = true;
         userEntries[msg.sender] += entries;
         participants.push(msg.sender);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             ravenDaleNFT.transferFrom(msg.sender, address(this), tokenIds[i]);
-        }
-    }
-    
-    function claimFreeParticipation(uint256[] memory tokenIds) external {
-        require(State == currentState.ENDED, "Free participation not ended");
-        require(isFreeParticipationClaimed[msg.sender], "You are not eligible");
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            ravenDaleNFT.transferFrom(address(this), msg.sender, tokenIds[i]);
         }
     }
     
@@ -83,6 +71,13 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
             }
         }
     }
+    
+    function withdrawNFT(address[] memory users, uint256[] memory tokenIds) external onlyOwner{
+        require(State == currentState.ENDED, "Participation not ended");
+        for (uint256 i = 0; i < users.length; i++)
+            ravenDaleNFT.transferFrom(address(this), users[i], tokenIds[i]);
+    }
+  
     
     /**
         * @dev Restock the contract with ETH for refunding users
@@ -118,11 +113,7 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
     function getEntries(address user) external view returns (uint256) {
         return userEntries[user];
     }
-    
-    function getFreeParticipationClaimed(address user) external view returns (bool) {
-        return isFreeParticipationClaimed[user];
-    }
-    
+
     function getSignatureUsed(bytes memory nonce) external view returns (bool) {
         return isSignatureUsed[nonce];
     }
@@ -142,4 +133,7 @@ contract ETHReceiver is OwnableUpgradeable, Whitelist {
     ) public pure virtual returns (bytes4) {
         return this.onERC721Received.selector;
     }
+    
 }
+    
+
