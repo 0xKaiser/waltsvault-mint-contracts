@@ -12,12 +12,14 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
     enum currentState {NOT_STARTED, STARTED, ENDED}
     currentState public State;
     
+    uint256 public entriesPerRavenDale;
     uint256 public entryPrice;
     address public designatedSigner;
     address[] public participants;
-    
+    address[] public freeParticipants;
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => uint256) private userEntries;
+    mapping(address => bool) private FreeParticipants;
     
     function initialize (address _ravenDaleNFTAddress) external initializer {
         __Ownable_init();
@@ -44,18 +46,16 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         participants.push(msg.sender);
     }
     
-    function enterFreeParticipation(whitelist memory signature, uint256[] memory tokenIds, uint256 entries) external {
-        require(getSigner(signature) == designatedSigner, "Invalid signature");
+    function enterFreeParticipation(uint256[] memory tokenIds) external {
         uint256 ravenDaleNFTBalance = ravenDaleNFT.balanceOf(msg.sender);
         require(ravenDaleNFTBalance > 0, "You don't own any NFT");
         require(ravenDaleNFTBalance == tokenIds.length, "You are not staking all NFT");
         require(State == currentState.STARTED, "Free participation not started");
-        require(block.timestamp < signature.nonce + 3 minutes, "Expired Nonce");
-        require(!isSignatureUsed[signature.signature], "Nonce already used");
-        require(signature.entriesAllowed >= (entries + userEntries[msg.sender]), "Invalid amount");
-        isSignatureUsed[signature.signature] = true;
-        userEntries[msg.sender] += entries;
-        participants.push(msg.sender);
+        userEntries[msg.sender] += entriesPerRavenDale * tokenIds.length;
+        if(FreeParticipants[msg.sender] == false){
+            freeParticipants.push(msg.sender);
+            FreeParticipants[msg.sender] = true;
+        }
         for (uint256 i = 0; i < tokenIds.length; i++) {
             require(ravenDaleNFT.ownerOf(tokenIds[i]) == msg.sender, "You are not the owner of the NFT");
             ravenDaleNFT.transferFrom(msg.sender, address(this), tokenIds[i]);
@@ -87,6 +87,8 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         require(State == currentState.ENDED, "Free participation not ended");
     }
     
+    // Setters
+    
     function startParticipation() external onlyOwner {
         State = currentState.STARTED;
     }
@@ -99,6 +101,10 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         entryPrice = _entryPrice;
     }
     
+    function setEntriesPerRavenDale(uint256 _entriesPerRavenDale) external onlyOwner {
+        entriesPerRavenDale = _entriesPerRavenDale;
+    }
+    
     function setDesignatedSigner(address _designatedSigner) external onlyOwner {
         designatedSigner = _designatedSigner;
     }
@@ -106,6 +112,8 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
     function setNFTAddress(address _ravenDaleNFTAddress) external onlyOwner {
         ravenDaleNFT = IERC721Upgradeable(_ravenDaleNFTAddress);
     }
+    
+    // Getters
     
     function getParticipants() external view returns (address[] memory) {
         return participants;
@@ -117,6 +125,14 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
 
     function getSignatureUsed(bytes memory nonce) external view returns (bool) {
         return isSignatureUsed[nonce];
+    }
+    
+    function getFreeParticipants() external view returns (address[] memory) {
+        return freeParticipants;
+    }
+    
+    function getFreeParticipation(address user) external view returns (bool) {
+        return FreeParticipants[user];
     }
     
     
