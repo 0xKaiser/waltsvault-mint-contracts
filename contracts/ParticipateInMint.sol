@@ -57,7 +57,6 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
             isFCFSParticipant[msg.sender] = true;
         }
         
-        isSignatureUsed[signature.signature] = true;
         fcfsUserEntries[msg.sender] += entries;
     }
     
