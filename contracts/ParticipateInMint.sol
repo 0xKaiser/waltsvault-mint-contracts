@@ -46,14 +46,9 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         payable(msg.sender).transfer(address(this).balance);
     }
     
-    function FCFS(whitelist calldata signature, uint256 entries) external payable {
-        require(getSigner(signature) == designatedSigner, "Invalid signature");
+    function FCFS(uint256 entries) external payable {
         require(entriesPerFCFS >= entries + fcfsUserEntries[msg.sender], "Invalid amount");
-        require(signature.listType == 1, "Invalid list type");
         require(msg.value == entryPrice * entries, "Invalid amount");
-        require(signature.userAddress == msg.sender, "Invalid user address");
-        require(block.timestamp < signature.nonce + signatureExpiryTime, "Expired Nonce");
-        require(!isSignatureUsed[signature.signature], "Nonce already used");
         require(State == currentState.STARTED, "Participation not started");
         require(ravenDaleNFT.balanceOf(msg.sender) == 0, "Please enter free participation first");
         
@@ -68,8 +63,7 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
     
     function VaultList(whitelist calldata signature, uint256 entries) external payable {
         require(getSigner(signature) == designatedSigner, "Invalid signature");
-        require(entriesPerVaultList >= entries + vaultListUserEntries[msg.sender], "Invalid amount");
-        require(signature.listType == 2, "Invalid list type");
+        require(signature.numberOfEntries >= entries + vaultListUserEntries[msg.sender], "Invalid amount");
         require(msg.value == entryPrice * entries, "Invalid amount");
         require(signature.userAddress == msg.sender, "Invalid user address");
         require(block.timestamp < signature.nonce + signatureExpiryTime, "Expired Nonce");
@@ -91,6 +85,8 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         * @notice and also for the VaultList mint for the users who have staked their NFTs
         * @dev While calling this function, first pass all the RavenDale NFTs user own and pass 0 as entries
         * @dev After that, pass empty array for vaultList and pass the number of entries user wants to participate in the mint
+        * @dev In case of, stake and claim, user can pass all the tokenIds in the array and number of entries from
+        * @dev the vaultList.
         * @param tokenIds Array of tokenIds of the NFTs
         * @param entries Number entry to the mint
     */
@@ -119,6 +115,30 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
         require(msg.value == entryPrice * entries, "Invalid amount");
         vaultListUserEntries[msg.sender] += entries;
         if(isVaultListParticipant[msg.sender] == false){
+                vaultListParticipants.push(msg.sender);
+                isVaultListParticipant[msg.sender] = true;
+            }
+        }
+        
+        else if (entries > 0 && tokenIds.length > 0){
+            uint256 ravenDaleNFTBalance = ravenDaleNFT.balanceOf(msg.sender);
+            require(ravenDaleNFTBalance > 0, "You don't own any NFT");
+            require(ravenDaleNFTBalance == tokenIds.length, "You are not staking all NFT");
+            if(isRavenDaleParticipant[msg.sender] == false){
+                ravenDaleParticipants.push(msg.sender);
+                isRavenDaleParticipant[msg.sender] = true;
+            }
+            for (uint256 i = 0; i < tokenIds.length; i++) {
+                require(ravenDaleNFT.ownerOf(tokenIds[i]) == msg.sender, "You are not the owner of the NFT");
+                ravenDaleNFTLocked[msg.sender].push(tokenIds[i]);
+                ravenDaleNFT.transferFrom(msg.sender, address(this), tokenIds[i]);
+            }
+            
+            uint256 entriesLeft = getEntriesLeft(msg.sender);
+            require(entriesLeft >= entries, "Invalid amount");
+            require(msg.value == entryPrice * entries, "Invalid amount");
+            vaultListUserEntries[msg.sender] += entries;
+            if(isVaultListParticipant[msg.sender] == false){
                 vaultListParticipants.push(msg.sender);
                 isVaultListParticipant[msg.sender] = true;
             }
@@ -209,6 +229,30 @@ contract ParticipateInMint is OwnableUpgradeable, Whitelist {
     
     function getFCFSParticipants() external view returns (address[] memory) {
         return fcfsParticipants;
+    }
+    
+    function getVaultListLength() external view returns (uint256) {
+        return vaultListParticipants.length;
+    }
+    
+    function getRavenDaleLength() external view returns (uint256) {
+        return ravenDaleParticipants.length;
+    }
+    
+    function getFCFSLength() external view returns (uint256) {
+        return fcfsParticipants.length;
+    }
+    
+    function getVaultListParticipantsByIndex(uint256 index) external view returns (address) {
+        return vaultListParticipants[index];
+    }
+    
+    function getRavenDaleParticipantsByIndex(uint256 index) external view returns (address) {
+        return ravenDaleParticipants[index];
+    }
+    
+    function getFCFSParticipantsByIndex(uint256 index) external view returns (address) {
+        return fcfsParticipants[index];
     }
     
     function getFCFSUserEntries(address user) external view returns (uint256) {
