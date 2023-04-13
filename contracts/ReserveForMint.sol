@@ -40,9 +40,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         uint256 amt_FCFS
     ) external payable {
         if(tokensToLock.length > 0){
-            require(state != currentstate.NOT_STARTED);
-            uint256 ravenDaleNFTBalance = ravendale.balanceOf(msg.sender);
-            require(ravenDaleNFTBalance == tokensToLock.length, "You are not staking all NFT");
+            require(state != currentstate.NOT_STARTED,"Participation not started yet");
             for(uint i=0; i<tokensToLock.length; i++){
                 require(ravendale.ownerOf(tokensToLock[i]) == msg.sender, "You are not the owner of the NFT");
                 tokensLockedByAddr[msg.sender].push(tokensToLock[i]);
@@ -51,14 +49,14 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
             }
         }
         
-        require(msg.value == (amt_FCFS + amt_VL) * resPrice);        
+        require(msg.value == (amt_FCFS + amt_VL) * resPrice, "Incorrect amount sent");
         
         if(amt_VL > 0){
             uint maxAllowedAmt_VL = (tokensToLock.length + tokensLockedByAddr[msg.sender].length
                             + signature.amountAllocated) * maxResPerSpot_VL;
             
-            require(state == currentstate.STARTED);
-            require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL);
+            require(state == currentstate.STARTED,"Participation not started yet");
+            require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL, "Exceeds max allowed reservation");
             
             verifySignature(signature);
             isSignatureUsed[signature.signature] = true;
@@ -67,8 +65,8 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         }
 
         if(amt_FCFS > 0){
-            require(state == currentstate.STARTED);
-            require(maxResPerAddr_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS);
+            require(state == currentstate.STARTED,"Participation not started yet");
+            require(maxResPerAddr_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS, "Exceeds max allowed reservation");
             resByAddr_FCFS[msg.sender] += amt_FCFS;
         }
     }
