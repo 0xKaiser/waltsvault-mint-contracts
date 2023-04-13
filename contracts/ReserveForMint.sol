@@ -53,7 +53,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         
         if(amt_VL > 0){
             uint maxAllowedAmt_VL = (tokensToLock.length + tokensLockedByAddr[msg.sender].length
-                            + signature.amountAllocated) * maxResPerSpot_VL;
+                            + signature.allocatedSpots) * maxResPerSpot_VL;
             
             require(state == currentstate.STARTED,"Participation not started yet");
             require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL, "Exceeds max allowed reservation");
@@ -77,7 +77,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         require(state == currentstate.ENDED, "Free participation not ended");
         verifySignature(signature);
         isSignatureUsed[signature.signature] = true;
-        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.amountAllocated;
+        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.allocatedSpots;
         
         payable(msg.sender).transfer(amtUnallocated * resPrice);
     }

@@ -8,7 +8,7 @@ contract Whitelist is EIP712Upgradeable {
 
     struct whitelist {
         uint256 nonce;
-        uint256 amountAllocated;
+        uint256 allocatedSpots;
         address userAddress;
         bytes signature;
     }
@@ -38,9 +38,9 @@ contract Whitelist is EIP712Upgradeable {
         _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("whitelist(uint256 nonce,uint256 amountAllocated,address userAddress)"),
+                    keccak256("whitelist(uint256 nonce,uint256 allocatedSpots,address userAddress)"),
                     _whitelist.nonce,
-                    _whitelist.amountAllocated,
+                    _whitelist.allocatedSpots,
                     _whitelist.userAddress
                 )
             )
