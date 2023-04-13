@@ -4,13 +4,13 @@ import {OwnableUpgradeable} from
 "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721Upgradeable} from
 "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import {Whitelist} from "./utils/WhiteListSigner.sol";
+import {Signer} from "./utils/Signer.sol";
 
-contract ReserveForMint is OwnableUpgradeable, Whitelist {
+contract ReserveForMint is OwnableUpgradeable, Signer {
 
     IERC721Upgradeable public ravendale;
     
-    enum currentstate {NOT_STARTED, STARTED, ENDED}
+    enum currentstate {NOT_STARTED, STARTED, ENDED, REFUND, RETURN}
     currentstate public state;
     
     address public designatedSigner;
@@ -28,14 +28,14 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
     
     function initialize (address _ravendaleAddr) external initializer {
         __Ownable_init();
-        __WhiteList_init();
+        __Signer_init();
         ravendale = IERC721Upgradeable(_ravendaleAddr);
         state = currentstate.NOT_STARTED;
     }
     
     function placeOrder(
         uint256[] calldata tokensToLock,
-        whitelist memory signature,
+        allowList memory signature,
         uint256 amt_VL,
         uint256 amt_FCFS
     ) external payable {
@@ -57,7 +57,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
             require(state == currentstate.STARTED,"Participation not started yet");
             require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL, "Exceeds max allowed reservation");
             
-            verifySignature(signature);
+            verifyAllowListSignature(signature);
             isSignatureUsed[signature.signature] = true;
             
             resByAddr_VL[msg.sender] += amt_VL;
@@ -71,18 +71,33 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
     }
     
     function claimRefund(
-        whitelist memory signature
+        returnList memory signature
     ) external {
         require(state == currentstate.ENDED, "Free participation not ended");
-        verifySignature(signature);
+        verifyReturnListSignature(signature);
         isSignatureUsed[signature.signature] = true;
-        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.allocatedSpots;
+        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.spotsReceived;
         
         payable(msg.sender).transfer(amtUnallocated * resPrice);
     }
+    
+    function claimReturn() external {
+        require(state == currentstate.RETURN, "Return not started yet");
+        uint[] memory tokensToReturn = tokensLockedByAddr[msg.sender];
+        for(uint i=0; i<tokensToReturn.length; i++){
+            ravendale.safeTransferFrom(address(this), msg.sender, tokensToReturn[i]);
+        }
+    }
 
-    function verifySignature(whitelist memory signature) internal view {
-        require(getSigner(signature) == designatedSigner, "Invalid signature");
+    function verifyAllowListSignature(allowList memory signature) internal view {
+        require(getSignerForAllowList(signature) == designatedSigner, "Invalid signature");
+        require(block.timestamp < signature.nonce + signatureExpiryTime, "Expired Nonce");
+        require(!isSignatureUsed[signature.signature], "Nonce already used");
+        require(signature.userAddress == msg.sender, "Invalid user address");
+    }
+    
+    function verifyReturnListSignature(returnList memory signature) internal view {
+        require(getSignerForReturnList(signature) == designatedSigner, "Invalid signature");
         require(block.timestamp < signature.nonce + signatureExpiryTime, "Expired Nonce");
         require(!isSignatureUsed[signature.signature], "Nonce already used");
         require(signature.userAddress == msg.sender, "Invalid user address");
