@@ -73,7 +73,7 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
     function claimRefund(
         returnList memory signature
     ) external {
-        require(state == currentstate.ENDED, "Free participation not ended");
+        require(state == currentstate.REFUND, "Refund not started yet");
         verifyReturnListSignature(signature);
         isSignatureUsed[signature.signature] = true;
         uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.spotsReceived;
@@ -81,7 +81,7 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
         payable(msg.sender).transfer(amtUnallocated * resPrice);
     }
     
-    function claimReturn() external {
+    function claimReturn() external onlyOwner {
         require(state == currentstate.RETURN, "Return not started yet");
         uint[] memory tokensToReturn = tokensLockedByAddr[msg.sender];
         for(uint i=0; i<tokensToReturn.length; i++){
@@ -122,6 +122,14 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
     
     function closeReservation() external onlyOwner {
         state = currentstate.ENDED;
+    }
+    
+    function startRefund() external onlyOwner {
+        state = currentstate.REFUND;
+    }
+    
+    function startReturn() external onlyOwner {
+        state = currentstate.RETURN;
     }
     
     function setReservationPrice(uint256 _resPrice) external onlyOwner {
