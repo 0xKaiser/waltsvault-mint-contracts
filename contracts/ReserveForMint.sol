@@ -42,7 +42,6 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         if(tokensToLock.length > 0){
             require(state != currentstate.NOT_STARTED,"Participation not started yet");
             for(uint i=0; i<tokensToLock.length; i++){
-                require(ravendale.ownerOf(tokensToLock[i]) == msg.sender, "You are not the owner of the NFT");
                 tokensLockedByAddr[msg.sender].push(tokensToLock[i]);
                 lockerAddrOf[tokensToLock[i]] = msg.sender;
                 ravendale.safeTransferFrom(msg.sender, address(this), tokensToLock[i]);

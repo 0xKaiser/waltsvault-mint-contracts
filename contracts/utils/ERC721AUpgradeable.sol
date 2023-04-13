@@ -428,7 +428,8 @@ contract ERC721AUpgradeable is ContextUpgradeable, ERC165Upgradeable, IERC721Upg
      *
      * Emits a {Transfer} event.
      */
-    function _transfer(address from, address to, uint256 tokenId) private {
+    function
+    _transfer(address from, address to, uint256 tokenId) private {
         TokenOwnership memory prevOwnership = _ownershipOf(tokenId);
 
         if (prevOwnership.addr != from) revert TransferFromIncorrectOwner();
