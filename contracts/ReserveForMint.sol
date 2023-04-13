@@ -14,7 +14,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
     currentstate public state;
     
     address public designatedSigner;
-
+    uint256 public signatureExpiryTime;
     uint public resPrice;
     uint public maxResPerAddr_FCFS;
     uint public maxResPerSpot_VL;
@@ -41,24 +41,27 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
     ) external payable {
         if(tokensToLock.length > 0){
             require(state != currentstate.NOT_STARTED);
-
+            uint256 ravenDaleNFTBalance = ravendale.balanceOf(msg.sender);
+            require(ravenDaleNFTBalance == tokensToLock.length, "You are not staking all NFT");
             for(uint i=0; i<tokensToLock.length; i++){
-                ravendale.safeTransferFrom(msg.sender, address(this), tokensToLock[i]);
-                tokensLockedByAddr.push[tokensToLock[i]];
+                require(ravendale.ownerOf(tokensToLock[i]) == msg.sender, "You are not the owner of the NFT");
+                tokensLockedByAddr[msg.sender].push(tokensToLock[i]);
                 lockerAddrOf[tokensToLock[i]] = msg.sender;
+                ravendale.safeTransferFrom(msg.sender, address(this), tokensToLock[i]);
             }
         }
         
         require(msg.value == (amt_FCFS + amt_VL) * resPrice);        
         
         if(amt_VL > 0){
-            uint maxAllowedAmt_VL = (tokensToLock.length + tokensLockedByAddr.length 
-                            + signature.spots) * maxResPerSpot_VL;
+            uint maxAllowedAmt_VL = (tokensToLock.length + tokensLockedByAddr[msg.sender].length
+                            + signature.amountAllocated) * maxResPerSpot_VL;
             
             require(state == currentstate.STARTED);
             require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL);
             
             verifySignature(signature);
+            isSignatureUsed[signature.signature] = true;
             
             resByAddr_VL[msg.sender] += amt_VL;
         }
@@ -66,26 +69,24 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
         if(amt_FCFS > 0){
             require(state == currentstate.STARTED);
             require(maxResPerAddr_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS);
-            
             resByAddr_FCFS[msg.sender] += amt_FCFS;
         }
     }
     
     function claimRefund(
-        whitelist memory signature,
-        uint256 amtAllocated,
+        whitelist memory signature
     ) external {
         require(state == currentstate.ENDED, "Free participation not ended");
-        
         verifySignature(signature);
+        isSignatureUsed[signature.signature] = true;
+        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.amountAllocated;
         
-        amtUnallocated = resByAddr_VL + resByAddr_FCFS - amtAllocated;        
         payable(msg.sender).transfer(amtUnallocated * resPrice);
     }
 
-    function verifySignature(whitelist memory signature) internal {
+    function verifySignature(whitelist memory signature) internal view {
         require(getSigner(signature) == designatedSigner, "Invalid signature");
-        require(block.timestamp < signature.nonce + 3 minutes, "Expired Nonce");
+        require(block.timestamp < signature.nonce + signatureExpiryTime, "Expired Nonce");
         require(!isSignatureUsed[signature.signature], "Nonce already used");
         require(signature.userAddress == msg.sender, "Invalid user address");
     }
@@ -112,7 +113,7 @@ contract ReserveForMint is OwnableUpgradeable, Whitelist {
     }
     
     function setReservationPrice(uint256 _resPrice) external onlyOwner {
-        resPrice = _entryresPrice;
+        resPrice = _resPrice;
     }
     
     function setDesignatedSigner(address _designatedSigner) external onlyOwner {
