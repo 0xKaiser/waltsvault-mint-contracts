@@ -21,6 +21,13 @@
     "hardhat": "^2.13.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts-upgradeable": "^4.8.2"
+    "@nomiclabs/hardhat-waffle": "^2.0.5",
+    "@openzeppelin/contracts": "^4.8.3",
+    "@openzeppelin/contracts-upgradeable": "^4.8.2",
+    "@openzeppelin/hardhat-upgrades": "^1.22.1",
+    "dotenv": "^16.0.3",
+    "hardhat-abi-exporter": "^2.10.1",
+    "hardhat-contract-sizer": "^2.8.0",
+    "hardhat-deploy": "^0.11.26"
   }
 }

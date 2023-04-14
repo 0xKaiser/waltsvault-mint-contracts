@@ -15,7 +15,7 @@ contract Signer is EIP712Upgradeable {
 
     struct returnList {
         uint256 nonce;
-        uint256 spotsReceived;
+        uint256 tokensAllocated;
         address userAddress;
         bytes signature;
     }
@@ -71,9 +71,9 @@ contract Signer is EIP712Upgradeable {
         _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("returnList(uint256 nonce,uint256 spotsReceived,address userAddress)"),
+                    keccak256("returnList(uint256 nonce,uint256 tokensAllocated,address userAddress)"),
                     _returnList.nonce,
-                    _returnList.spotsReceived,
+                    _returnList.tokensAllocated,
                     _returnList.userAddress
                 )
             )

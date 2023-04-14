@@ -1,35 +1,41 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import {OwnableUpgradeable} from
-"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {IERC721Upgradeable} from
-"@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import {Ownable} from
+"@openzeppelin/contracts/access/Ownable.sol";
+import {IERC721} from
+"@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract ReserveForMint is OwnableUpgradeable, Signer {
+contract ReserveForMint is Ownable, Signer {
 
-    IERC721Upgradeable public ravendale;
+    IERC721 public ravendale;
     
-    enum currentstate {NOT_STARTED, STARTED, ENDED, REFUND, RETURN}
+    enum currentstate {NOT_STARTED, STARTED, WITHDRAW, ENDED, REFUND, RETURN}
     currentstate public state;
     
     address public designatedSigner;
-    uint256 public signatureExpiryTime;
-    uint public resPrice;
-    uint public maxResPerAddr_FCFS;
-    uint public maxResPerSpot_VL;
-    
+    uint256 public signatureExpiryTime = 3 minutes;
+    uint public resPrice = 0.01 ether;
+    uint public maxResPerAddr_FCFS = 2;
+    uint public maxResPerSpot_VL = 2;
+    uint256 constant public totalTokensAllocated = 1000;
+
+    mapping(bytes => bool) private checkState;
     mapping(bytes => bool) private isSignatureUsed;
-    
     mapping(address => uint) public resByAddr_FCFS;
     mapping(address => uint) public resByAddr_VL;
-    mapping(address => uint[]) public tokensLockedByAddr;
+    mapping(address => uint[]) private tokensLockedByAddr;
     mapping(uint => address) public lockerAddrOf;
+    mapping(address => bool) public refundClaimed;
     
-    function initialize (address _ravendaleAddr) external initializer {
-        __Ownable_init();
+    modifier onlyOnce(currentstate newState) {
+        require(!checkState[abi.encodePacked(newState)], "Already started");
+        _;
+    }
+    
+    constructor(address _ravendaleAddr) {
         __Signer_init();
-        ravendale = IERC721Upgradeable(_ravendaleAddr);
+        ravendale = IERC721(_ravendaleAddr);
         state = currentstate.NOT_STARTED;
     }
     
@@ -74,18 +80,22 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
         returnList memory signature
     ) external {
         require(state == currentstate.REFUND, "Refund not started yet");
+        require(!refundClaimed[msg.sender], "Refund already claimed");
         verifyReturnListSignature(signature);
         isSignatureUsed[signature.signature] = true;
-        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.spotsReceived;
-        
+        refundClaimed[msg.sender] = true;
+        uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - signature.tokensAllocated;
         payable(msg.sender).transfer(amtUnallocated * resPrice);
     }
     
-    function claimReturn() external onlyOwner {
+    function returnRavendale(address[] calldata _user) external onlyOwner {
         require(state == currentstate.RETURN, "Return not started yet");
-        uint[] memory tokensToReturn = tokensLockedByAddr[msg.sender];
-        for(uint i=0; i<tokensToReturn.length; i++){
-            ravendale.safeTransferFrom(address(this), msg.sender, tokensToReturn[i]);
+        for(uint256 j=0; j<_user.length; j++){
+            uint[] memory tokensToReturn = tokensLockedByAddr[_user[j]];
+            tokensToReturn = tokensLockedByAddr[_user[j]];
+            for(uint i=0; i<tokensToReturn.length; i++){
+                ravendale.safeTransferFrom(address(this), _user[j], tokensToReturn[i]);
+            }
         }
     }
 
@@ -104,31 +114,37 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
     }
     
     function withdraw() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        uint256 balance = totalTokensAllocated * resPrice;
+        payable(msg.sender).transfer(balance);
     }
-
-    /**
-        * @dev Restock the contract with ETH for refunding users
-    */
-    function restockContractForRefund() external payable onlyOwner {
+    
+    function addETHForRefund() external payable onlyOwner {
         require(state == currentstate.ENDED, "Free participation not ended");
     }
     
     // Setters
+    function setWithdraw() external onlyOwner onlyOnce(currentstate.WITHDRAW) {
+        checkState[abi.encodePacked(currentstate.WITHDRAW)] = true;
+        state = currentstate.WITHDRAW;
+    }
     
-    function openReservation() external onlyOwner {
+    function openReservation() external onlyOwner onlyOnce(currentstate.STARTED) {
+        checkState[abi.encodePacked(currentstate.STARTED)] = true;
         state = currentstate.STARTED;
     }
     
-    function closeReservation() external onlyOwner {
+    function closeReservation() external onlyOwner onlyOnce(currentstate.ENDED) {
+        checkState[abi.encodePacked(currentstate.ENDED)] = true;
         state = currentstate.ENDED;
     }
     
-    function startRefund() external onlyOwner {
+    function startRefund() external onlyOwner onlyOnce(currentstate.REFUND) {
+        checkState[abi.encodePacked(currentstate.REFUND)] = true;
         state = currentstate.REFUND;
     }
     
-    function startReturn() external onlyOwner {
+    function startReturn() external onlyOwner onlyOnce(currentstate.RETURN) {
+        checkState[abi.encodePacked(currentstate.RETURN)] = true;
         state = currentstate.RETURN;
     }
     
@@ -141,10 +157,10 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
     }
     
     function setRavendale(address _ravendaleAddr) external onlyOwner {
-        ravendale = IERC721Upgradeable(_ravendaleAddr);
+        ravendale = IERC721(_ravendaleAddr);
     }
     
-    // Getters
+
     
     /// @notice Handle the receipt of an NFT
     /// @dev The ERC721 smart contract calls this function on the recipient
@@ -159,6 +175,20 @@ contract ReserveForMint is OwnableUpgradeable, Signer {
         bytes memory
     ) public pure virtual returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+    
+    // Getters
+    
+    function getTokensLockedByAddr(address _addr) external view returns(uint[] memory){
+        return tokensLockedByAddr[_addr];
+    }
+    
+    function getTotalTokensLockedByUser() external view returns(uint){
+        return tokensLockedByAddr[msg.sender].length;
+    }
+    
+    function getTokensLockedByAddrAt(address _addr, uint _index) external view returns(uint){
+        return tokensLockedByAddr[_addr][_index];
     }
     
 }
