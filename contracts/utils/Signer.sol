@@ -6,16 +6,16 @@ contract Signer is EIP712Upgradeable {
     string private constant SIGNING_DOMAIN = "Walts_Vault";
     string private constant SIGNATURE_VERSION = "1";
 
-    struct allowList {
+    struct orderInfo {
         uint256 nonce;
         uint256 allocatedSpots;
         address userAddress;
         bytes signature;
     }
 
-    struct returnList {
+    struct refundInfo {
         uint256 nonce;
-        uint256 tokensAllocated;
+        uint256 amtAllocated;
         address userAddress;
         bytes signature;
     }
@@ -29,34 +29,34 @@ contract Signer is EIP712Upgradeable {
 
     /**
     @dev This function is used to get signer address of signature
-    @param _allowList allowList object
+    @param _orderInfo orderInfo object
     */
-    function getSignerForAllowList(allowList memory _allowList) public view returns (address) {
-        return _verifyAllowList(_allowList);
+    function getSignerForAllowList(orderInfo memory _orderInfo) public view returns (address) {
+        return _verifyAllowList(_orderInfo);
 
     }
     /**
     @dev This function is used to get signer address of signature
-    @param _returnList returnList object
+    @param _refundInfo refundInfo object
     */
-    function getSignerForReturnList(returnList memory _returnList) public view returns (address) {
-        return _verifyReturnList(_returnList);
+    function getSignerForReturnList(refundInfo memory _refundInfo) public view returns (address) {
+        return _verifyReturnList(_refundInfo);
 
     }
     
     /**
     @dev This function is used to generate hash message
-    @param _allowList allowList object to create hash
+    @param _orderInfo orderInfo object to create hash
     */
-    function _allowListHash(allowList memory _allowList) internal view returns (bytes32) {
+    function _orderInfoHash(orderInfo memory _orderInfo) internal view returns (bytes32) {
         return
         _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("allowList(uint256 nonce,uint256 allocatedSpots,address userAddress)"),
-                    _allowList.nonce,
-                    _allowList.allocatedSpots,
-                    _allowList.userAddress
+                    keccak256("orderInfo(uint256 nonce,uint256 allocatedSpots,address userAddress)"),
+                    _orderInfo.nonce,
+                    _orderInfo.allocatedSpots,
+                    _orderInfo.userAddress
                 )
             )
         );
@@ -64,17 +64,17 @@ contract Signer is EIP712Upgradeable {
     
     /**
     @dev This function is used to generate hash message
-    @param _returnList returnList object to create hash
+    @param _refundInfo refundInfo object to create hash
     */
-    function _returnListHash(returnList memory _returnList) internal view returns (bytes32) {
+    function _refundInfoHash(refundInfo memory _refundInfo) internal view returns (bytes32) {
         return
         _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("returnList(uint256 nonce,uint256 tokensAllocated,address userAddress)"),
-                    _returnList.nonce,
-                    _returnList.tokensAllocated,
-                    _returnList.userAddress
+                    keccak256("refundInfo(uint256 nonce,uint256 amtAllocated,address userAddress)"),
+                    _refundInfo.nonce,
+                    _refundInfo.amtAllocated,
+                    _refundInfo.userAddress
                 )
             )
         );
@@ -82,19 +82,19 @@ contract Signer is EIP712Upgradeable {
 
     /**
     @dev This function is used to verify signature
-    @param _allowList allowList object to verify
+    @param _orderInfo orderInfo object to verify
     */
-    function _verifyAllowList(allowList memory _allowList) internal view returns (address) {
-        bytes32 digest = _allowListHash(_allowList);
-        return ECDSAUpgradeable.recover(digest, _allowList.signature);
+    function _verifyAllowList(orderInfo memory _orderInfo) internal view returns (address) {
+        bytes32 digest = _orderInfoHash(_orderInfo);
+        return ECDSAUpgradeable.recover(digest, _orderInfo.signature);
     }
     
     /**
     @dev This function is used to verify signature
-    @param _returnList returnList object to verify
+    @param _refundInfo refundInfo object to verify
     */
-    function _verifyReturnList(returnList memory _returnList) internal view returns (address) {
-        bytes32 digest = _returnListHash(_returnList);
-        return ECDSAUpgradeable.recover(digest, _returnList.signature);
+    function _verifyReturnList(refundInfo memory _refundInfo) internal view returns (address) {
+        bytes32 digest = _refundInfoHash(_refundInfo);
+        return ECDSAUpgradeable.recover(digest, _refundInfo.signature);
     }
 }
