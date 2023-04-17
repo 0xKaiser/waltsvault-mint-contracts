@@ -2,7 +2,7 @@ import { expect } from "chai";
 import {ethers, upgrades} from "hardhat";
 describe("Order", async function () {
 
-    let order: any, owner: any, addr1: any, addr2: any, mock:any;
+    let order: any, owner: any, addr1: any, addr2: any, mock:any, nft;
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
 
@@ -14,6 +14,10 @@ describe("Order", async function () {
         const Order = await ethers.getContractFactory("WaltsVaultReservation");
         order = await Order.deploy();
         await order.deployed();
+
+        const NFT = await ethers.getContractFactory("WaultsVault");
+        nft = await NFT.deploy();
+        await nft.deployed();
 
         await mock.mint(addr1.address, 10);
         await mock.setApprovalForAll(order.address, true);

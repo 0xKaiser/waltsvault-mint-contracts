@@ -10,24 +10,24 @@ contract WaltsVaultReservation is Ownable, Signer {
 
     IERC721 public ravendale;
     
-    event placeOrder_(
+    event PlaceOrder(
         address indexed user,
         uint256 indexed totalSpotsAccumulated
     );
-    event claimRefund_(
+    event ClaimRefund(
         address indexed user,
         uint256 indexed amtUnallocated
     );
-    event releaseRavendale_(
+    event ReleaseRavendale(
         address indexed user,
         uint256 indexed tokensToReturn
     );
-    event openReservation_();
-    event closeReservation_();
-    event startRefund_();
-    event startReturn_();
+    event OpenReservation();
+    event CloseReservation();
+    event StartRefund();
+    event StartReturn();
     
-    enum currentState {NOT_LIVE, LIVE, WITHDRAW, OVER, REFUND, RETURN}
+    enum currentState {NOT_LIVE, LIVE, OVER, REFUND, RETURN}
     currentState public state;
     
     address public designatedSigner;
@@ -36,8 +36,8 @@ contract WaltsVaultReservation is Ownable, Signer {
     uint public MAX_RES_PER_ADDR_FCFS = 2;
     uint public MAX_RES_PER_ADDR_VL = 2;
     uint256 constant public MAX_AMT_FOR_RES = 1000;
-
-    mapping(bytes => bool) private isStateSet;
+    uint256 public fundsWithdrawn;
+    
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => uint) public resByAddr_FCFS;
     mapping(address => uint) public resByAddr_VL;
@@ -45,10 +45,6 @@ contract WaltsVaultReservation is Ownable, Signer {
     mapping(uint => address) public lockerOf;
     mapping(address => bool) public hasClaimedRefund;
     
-    modifier onlyOnce(currentState newState) {
-        require(!isStateSet[abi.encodePacked(newState)], "State already started");
-        _;
-    }
     
     constructor(address _ravendaleAddr, address _designatedSigner) {
         __Signer_init();
@@ -65,7 +61,7 @@ contract WaltsVaultReservation is Ownable, Signer {
     ) external payable {
         
         if(tokensToLock.length > 0){
-            require(state != currentState.NOT_LIVE,"Participation not started yet");
+            require(state != currentState.NOT_LIVE,"Reservation not started yet");
             for(uint i=0; i<tokensToLock.length; i++){
                 tokenLockedBy[msg.sender].push(tokensToLock[i]);
                 lockerOf[tokensToLock[i]] = msg.sender;
@@ -79,7 +75,7 @@ contract WaltsVaultReservation is Ownable, Signer {
             uint maxAllowedAmt_VL = (tokensToLock.length + tokenLockedBy[msg.sender].length
                             + info.allocatedSpots) * MAX_RES_PER_ADDR_VL;
             
-            require(state == currentState.LIVE,"Participation not started yet");
+            require(state == currentState.LIVE,"Reservation not started yet");
             require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL, "Exceeds max allowed reservation");
             
             verifyOrderInfoSignature(info);
@@ -89,13 +85,13 @@ contract WaltsVaultReservation is Ownable, Signer {
         }
 
         if(amt_FCFS > 0){
-            require(state == currentState.LIVE,"Participation not started yet");
+            require(state == currentState.LIVE,"Reservation not started yet");
             require(MAX_RES_PER_ADDR_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS, "Exceeds max allowed reservation");
             resByAddr_FCFS[msg.sender] += amt_FCFS;
         }
         
         uint256 totalSpotsAccumulated = amt_FCFS + amt_VL + tokensToLock.length;
-        emit placeOrder_(msg.sender, totalSpotsAccumulated);
+        emit PlaceOrder(msg.sender, totalSpotsAccumulated);
     }
     
     function claimRefund(
@@ -108,7 +104,7 @@ contract WaltsVaultReservation is Ownable, Signer {
         hasClaimedRefund[msg.sender] = true;
         uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - info.amtAllocated;
         payable(msg.sender).transfer(amtUnallocated * PRICE_PER_RES);
-        emit claimRefund_(msg.sender, amtUnallocated);
+        emit ClaimRefund(msg.sender, amtUnallocated);
     }
     
     function releaseRavendale(address[] calldata lockers) external onlyOwner {
@@ -117,7 +113,7 @@ contract WaltsVaultReservation is Ownable, Signer {
             uint[] memory tokensToReturn = tokenLockedBy[lockers[j]];
             for(uint i=0; i<tokensToReturn.length; i++){
                 ravendale.safeTransferFrom(address(this), lockers[j], tokensToReturn[i]);
-                emit releaseRavendale_(lockers[j], tokensToReturn[i]);
+                emit ReleaseRavendale(lockers[j], tokensToReturn[i]);
             }
         }
         delete tokenLockedBy[msg.sender];
@@ -138,42 +134,34 @@ contract WaltsVaultReservation is Ownable, Signer {
     }
     
     function withdraw() external onlyOwner {
-        require(state == currentState.WITHDRAW, "Withdraw not started yet");
         uint256 balance = MAX_AMT_FOR_RES * PRICE_PER_RES;
         if (balance > address(this).balance) {
             balance = address(this).balance;
         }
+        require(fundsWithdrawn + balance <= MAX_AMT_FOR_RES * PRICE_PER_RES, "Cannot withdraw more than max allowed");
+        fundsWithdrawn += balance;
         payable(msg.sender).transfer(balance);
     }
     
     // Setters
-    function openWithdraw() external onlyOwner onlyOnce(currentState.WITHDRAW) {
-        isStateSet[abi.encodePacked(currentState.WITHDRAW)] = true;
-        state = currentState.WITHDRAW;
-    }
-    
-    function openReservation() external onlyOwner onlyOnce(currentState.LIVE) {
-        isStateSet[abi.encodePacked(currentState.LIVE)] = true;
+    function openReservation() external onlyOwner {
         state = currentState.LIVE;
-        emit openReservation_();
+        emit OpenReservation();
     }
     
-    function closeReservation() external onlyOwner onlyOnce(currentState.OVER) {
-        isStateSet[abi.encodePacked(currentState.OVER)] = true;
+    function closeReservation() external onlyOwner {
         state = currentState.OVER;
-        emit closeReservation_();
+        emit CloseReservation();
     }
     
     function startRefund() external onlyOwner {
-        isStateSet[abi.encodePacked(currentState.REFUND)] = true;
         state = currentState.REFUND;
-        emit startRefund_();
+        emit StartRefund();
     }
     
     function startReturn() external onlyOwner {
-        isStateSet[abi.encodePacked(currentState.RETURN)] = true;
         state = currentState.RETURN;
-        emit startReturn_();
+        emit StartReturn();
     }
     
     function setReservationPrice(uint256 _PRICE_PER_RES) external onlyOwner {
