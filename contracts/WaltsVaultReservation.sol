@@ -10,13 +10,22 @@ contract WaltsVaultReservation is Ownable, Signer {
 
     IERC721 public ravendale;
     
-    event PlaceOrder(
+    
+    event RavendaleLocked(
         address indexed user,
-        uint256 indexed totalSpotsAccumulated
+        uint256 indexed tokenId
+    );
+    event VaultsReserved(
+        address user,
+        uint256 indexed amt_VL
+    );
+    event FCFSReserved(
+        address user,
+        uint256 indexed amt_FCFS
     );
     event ClaimRefund(
         address indexed user,
-        uint256 indexed amtUnallocated
+        uint256 indexed refundAmount
     );
     event ReleaseRavendale(
         address indexed user,
@@ -66,6 +75,7 @@ contract WaltsVaultReservation is Ownable, Signer {
                 tokenLockedBy[msg.sender].push(tokensToLock[i]);
                 lockerOf[tokensToLock[i]] = msg.sender;
                 ravendale.safeTransferFrom(msg.sender, address(this), tokensToLock[i]);
+                emit RavendaleLocked(msg.sender, tokensToLock[i]);
             }
         }
         
@@ -82,16 +92,15 @@ contract WaltsVaultReservation is Ownable, Signer {
             isSignatureUsed[info.signature] = true;
             
             resByAddr_VL[msg.sender] += amt_VL;
+            emit VaultsReserved(msg.sender, amt_VL);
         }
 
         if(amt_FCFS > 0){
             require(state == currentState.LIVE,"Reservation not started yet");
             require(MAX_RES_PER_ADDR_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS, "Exceeds max allowed reservation");
             resByAddr_FCFS[msg.sender] += amt_FCFS;
+            emit FCFSReserved(msg.sender, amt_FCFS);
         }
-        
-        uint256 totalSpotsAccumulated = amt_FCFS + amt_VL + tokensToLock.length;
-        emit PlaceOrder(msg.sender, totalSpotsAccumulated);
     }
     
     function claimRefund(
@@ -103,8 +112,9 @@ contract WaltsVaultReservation is Ownable, Signer {
         isSignatureUsed[info.signature] = true;
         hasClaimedRefund[msg.sender] = true;
         uint256 amtUnallocated = resByAddr_VL[msg.sender] + resByAddr_FCFS[msg.sender] - info.amtAllocated;
-        payable(msg.sender).transfer(amtUnallocated * PRICE_PER_RES);
-        emit ClaimRefund(msg.sender, amtUnallocated);
+        uint256 amountToRefund = amtUnallocated * PRICE_PER_RES;
+        payable(msg.sender).transfer(amountToRefund);
+        emit ClaimRefund(msg.sender, amountToRefund);
     }
     
     function releaseRavendale(address[] calldata lockers) external onlyOwner {

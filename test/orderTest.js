@@ -33,7 +33,7 @@ describe("Order", async function () {
       await expect(order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther("0.02")})).to.be.revertedWith("Reservation not started yet")
     })
 
-    
+
 
     it("Should reserve a slot locking the mock tokens", async function () {
 
