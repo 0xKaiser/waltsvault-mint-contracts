@@ -6,7 +6,7 @@ import {RevokableOperatorFiltererUpgradeable} from "./OpenseaRegistries/Revokabl
 import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableDefaultOperatorFiltererUpgradeable.sol";
 import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFilterer.sol";
 
-contract WaultsVault is
+contract WaltsVault is
 OwnableUpgradeable,
 ERC721AUpgradeable,
 RevokableDefaultOperatorFiltererUpgradeable {
@@ -48,10 +48,6 @@ RevokableDefaultOperatorFiltererUpgradeable {
     
     function toggleController(address controller) public onlyOwner {
         isController[controller] = !isController[controller];
-    }
-    
-    function getTotalSupply() public view returns (uint256) {
-        return totalSupply();
     }
     
     function _startTokenId() internal view virtual override returns (uint256) {
