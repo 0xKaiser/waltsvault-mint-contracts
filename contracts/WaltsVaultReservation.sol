@@ -50,10 +50,9 @@ contract WaltsVaultReservation is Ownable, Signer {
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => uint) public resByAddr_FCFS;
     mapping(address => uint) public resByAddr_VL;
-    mapping(address => uint[]) private tokenLockedBy;
+    mapping(address => uint[]) private tokensLockedBy;
     mapping(uint => address) public lockerOf;
     mapping(address => bool) public hasClaimedRefund;
-    
     
     constructor(address _ravendaleAddr, address _designatedSigner) {
         __Signer_init();
@@ -72,7 +71,7 @@ contract WaltsVaultReservation is Ownable, Signer {
         if(tokensToLock.length > 0){
             require(state != currentState.NOT_LIVE,"Reservation not started yet");
             for(uint i=0; i<tokensToLock.length; i++){
-                tokenLockedBy[msg.sender].push(tokensToLock[i]);
+                tokensLockedBy[msg.sender].push(tokensToLock[i]);
                 lockerOf[tokensToLock[i]] = msg.sender;
                 ravendale.safeTransferFrom(msg.sender, address(this), tokensToLock[i]);
                 emit RavendaleLocked(msg.sender, tokensToLock[i]);
@@ -82,7 +81,7 @@ contract WaltsVaultReservation is Ownable, Signer {
         require(msg.value == (amt_FCFS + amt_VL) * PRICE_PER_RES, "Incorrect amount sent");
         
         if(amt_VL > 0){
-            uint maxAllowedAmt_VL = (tokensToLock.length + tokenLockedBy[msg.sender].length
+            uint maxAllowedAmt_VL = (tokensToLock.length + tokensLockedBy[msg.sender].length
                             + info.allocatedSpots) * MAX_RES_PER_ADDR_VL;
             
             require(state == currentState.LIVE,"Reservation not started yet");
@@ -120,13 +119,13 @@ contract WaltsVaultReservation is Ownable, Signer {
     function releaseRavendale(address[] calldata lockers) external onlyOwner {
         require(state == currentState.RETURN, "Return not started yet");
         for(uint256 j=0; j<lockers.length; j++){
-            uint[] memory tokensToReturn = tokenLockedBy[lockers[j]];
+            uint[] memory tokensToReturn = tokensLockedBy[lockers[j]];
             for(uint i=0; i<tokensToReturn.length; i++){
                 ravendale.safeTransferFrom(address(this), lockers[j], tokensToReturn[i]);
                 emit ReleaseRavendale(lockers[j], tokensToReturn[i]);
             }
         }
-        delete tokenLockedBy[msg.sender];
+        delete tokensLockedBy[msg.sender];
     }
 
     function verifyOrderInfoSignature(orderInfo memory info) internal view {
@@ -153,6 +152,15 @@ contract WaltsVaultReservation is Ownable, Signer {
         payable(msg.sender).transfer(balance);
     }
     
+    function airdropReserveTokens(address waltsVault, address[] calldata receivers, uint256[] calldata tokenIds)
+    external
+    onlyOwner {
+        require(receivers.length == tokenIds.length, "Invalid input");
+        for(uint i=0; i<receivers.length; i++){
+            IERC721(waltsVault).safeTransferFrom(address(this), receivers[i], tokenIds[i]);
+        }
+    }
+    
     // Setters
     function openReservation() external onlyOwner {
         state = currentState.LIVE;
@@ -174,7 +182,14 @@ contract WaltsVaultReservation is Ownable, Signer {
         emit StartReturn();
     }
     
+    function setMaxResPerAddr(uint256 _MAX_RES_PER_ADDR_VL, uint256 _MAX_RES_PER_ADDR_FCFS) external onlyOwner {
+        require(state == currentState.NOT_LIVE, "Cannot change max reservation when reservation is live");
+        MAX_RES_PER_ADDR_VL = _MAX_RES_PER_ADDR_VL;
+        MAX_RES_PER_ADDR_FCFS = _MAX_RES_PER_ADDR_FCFS;
+    }
+    
     function setReservationPrice(uint256 _PRICE_PER_RES) external onlyOwner {
+        require(state == currentState.NOT_LIVE, "Cannot change price when reservation is live");
         PRICE_PER_RES = _PRICE_PER_RES;
     }
     
@@ -187,17 +202,16 @@ contract WaltsVaultReservation is Ownable, Signer {
     }
     
     // Getters
-    
     function getTokensLockedByAddr(address _addr) external view returns(uint[] memory){
-        return tokenLockedBy[_addr];
+        return tokensLockedBy[_addr];
     }
     
     function getTotalTokensLockedByAddr(address _addr) external view returns(uint){
-        return tokenLockedBy[_addr].length;
+        return tokensLockedBy[_addr].length;
     }
     
     function getTokensLockedByAddrAt(address _addr, uint _index) external view returns(uint){
-        return tokenLockedBy[_addr][_index];
+        return tokensLockedBy[_addr][_index];
     }
     
     
