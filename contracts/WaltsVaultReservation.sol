@@ -129,14 +129,14 @@ contract WaltsVaultReservation is Ownable, Signer {
     }
 
     function verifyOrderInfoSignature(orderInfo memory info) internal view {
-        require(getSignerForAllowList(info) == designatedSigner, "Invalid info");
+        require(getSignerForOrderInfo(info) == designatedSigner, "Invalid info");
         require(block.timestamp < info.nonce + SIGNATURE_VALIDITY, "Expired Nonce");
         require(!isSignatureUsed[info.signature], "Nonce already used");
         require(info.userAddress == msg.sender, "Invalid user address");
     }
     
     function verifyReturnInfoSignature(refundInfo memory info) internal view {
-        require(getSignerForReturnList(info) == designatedSigner, "Invalid info");
+        require(getSignerForRefundInfo(info) == designatedSigner, "Invalid info");
         require(block.timestamp < info.nonce + SIGNATURE_VALIDITY, "Expired Nonce");
         require(!isSignatureUsed[info.signature], "Nonce already used");
         require(info.userAddress == msg.sender, "Invalid user address");
