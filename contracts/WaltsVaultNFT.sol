@@ -7,12 +7,11 @@ import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/R
 import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFilterer.sol";
 
 contract WaltsVault is
-OwnableUpgradeable,
-ERC721AUpgradeable,
-RevokableDefaultOperatorFiltererUpgradeable {
-    
-    string public baseURI;
-    
+    OwnableUpgradeable,
+    ERC721AUpgradeable,
+    RevokableDefaultOperatorFiltererUpgradeable 
+{    
+    string public baseURI;   
     mapping(address => bool) public isController;
     
     modifier onlyController(address from) {
@@ -26,11 +25,10 @@ RevokableDefaultOperatorFiltererUpgradeable {
         __RevokableDefaultOperatorFilterer_init();
     }
     
-    function mint(address to, uint256 amount) external onlyController(msg.sender) {
-        _mint(to,amount);
-    }
-    
-    function mintToMultipleUsers(address[] calldata to, uint256[] calldata amount) external onlyController(msg.sender) {
+    function airdrop(
+        address[] calldata to, 
+        uint256[] calldata amount
+    ) external onlyController(msg.sender) {
         require(to.length == amount.length, "Invalid Input");
         for(uint256 i = 0; i < to.length; i++) {
             _mint(to[i],amount[i]);
@@ -38,7 +36,7 @@ RevokableDefaultOperatorFiltererUpgradeable {
     }
     
     function setBaseURI(string memory newBaseURI) public onlyOwner {
-        require(bytes(newBaseURI).length > 0, "Invalid Base URI Provided");
+        require(bytes(newBaseURI).length > 0);
         baseURI = newBaseURI;
     }
     
@@ -50,6 +48,7 @@ RevokableDefaultOperatorFiltererUpgradeable {
         isController[controller] = !isController[controller];
     }
     
+    // Overrides
     function _startTokenId() internal view virtual override returns (uint256) {
         return 1;
     }
@@ -71,19 +70,19 @@ RevokableDefaultOperatorFiltererUpgradeable {
     }
     
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
-    public
-    override
-    onlyAllowedOperator(from)
+        public
+        override
+        onlyAllowedOperator(from)
     {
         super.safeTransferFrom(from, to, tokenId, data);
     }
     
     function owner()
-    public
-    view
-    virtual
-    override (OwnableUpgradeable, RevokableOperatorFiltererUpgradeable)
-    returns (address)
+        public
+        view
+        virtual
+        override (OwnableUpgradeable, RevokableOperatorFiltererUpgradeable)
+        returns (address)
     {
         return OwnableUpgradeable.owner();
     }
