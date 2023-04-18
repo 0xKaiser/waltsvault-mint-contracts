@@ -134,20 +134,6 @@ contract WaltsVaultReservation is Ownable, Signer {
         delete tokensLockedBy[msg.sender];
     }
 
-    function verifyOrderInfoSignature(orderInfo memory info) internal view {
-        require(getSignerOrder(info) == designatedSigner, "Invalid info");
-        require(block.timestamp < info.nonce + SIGNATURE_VALIDITY, "Expired Nonce");
-        require(!isSignatureUsed[info.signature], "Nonce already used");
-        require(info.userAddress == msg.sender, "Invalid user address");
-    }
-    
-    function verifyRefundInfoSignature(refundInfo memory info) internal view {
-        require(getSignerRefund(info) == designatedSigner, "Invalid info");
-        require(block.timestamp < info.nonce + SIGNATURE_VALIDITY, "Expired Nonce");
-        require(!isSignatureUsed[info.signature], "Nonce already used");
-        require(info.userAddress == msg.sender, "Invalid user address");
-    }
-
     function withdraw() external onlyOwner {
         uint256 pending = MAX_AMT_FOR_RES * PRICE_PER_RES - totalWithdrawal;
         if (pending > address(this).balance) {
