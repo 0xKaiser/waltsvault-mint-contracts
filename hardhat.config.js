@@ -21,7 +21,7 @@ module.exports = {
     defaultNetwork: "hardhat",
     networks: {
         goerli: {
-            url: "https://goerli.infura.io/v3/6422400310bc4cb784d6a819632808b9",
+            url: "https://goerli.infura.io/v3/3932027bc24b4df089d1ab33886ad3db",
             accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
             saveDeployments: true,
             chainId: 5,

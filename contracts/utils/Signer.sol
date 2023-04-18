@@ -31,16 +31,16 @@ contract Signer is EIP712Upgradeable {
     @dev This function is used to get signer address of signature
     @param _orderInfo orderInfo object
     */
-    function getSignerForAllowList(orderInfo memory _orderInfo) public view returns (address) {
-        return _verifyAllowList(_orderInfo);
+    function getSignerOrder(orderInfo memory _orderInfo) public view returns (address) {
+        return _verifyOrder(_orderInfo);
 
     }
     /**
     @dev This function is used to get signer address of signature
     @param _refundInfo refundInfo object
     */
-    function getSignerForReturnList(refundInfo memory _refundInfo) public view returns (address) {
-        return _verifyReturnList(_refundInfo);
+    function getSignerRefund(refundInfo memory _refundInfo) public view returns (address) {
+        return _verifyRefund(_refundInfo);
 
     }
     
@@ -84,7 +84,7 @@ contract Signer is EIP712Upgradeable {
     @dev This function is used to verify signature
     @param _orderInfo orderInfo object to verify
     */
-    function _verifyAllowList(orderInfo memory _orderInfo) internal view returns (address) {
+    function _verifyOrder(orderInfo memory _orderInfo) internal view returns (address) {
         bytes32 digest = _orderInfoHash(_orderInfo);
         return ECDSAUpgradeable.recover(digest, _orderInfo.signature);
     }
@@ -93,7 +93,7 @@ contract Signer is EIP712Upgradeable {
     @dev This function is used to verify signature
     @param _refundInfo refundInfo object to verify
     */
-    function _verifyReturnList(refundInfo memory _refundInfo) internal view returns (address) {
+    function _verifyRefund(refundInfo memory _refundInfo) internal view returns (address) {
         bytes32 digest = _refundInfoHash(_refundInfo);
         return ECDSAUpgradeable.recover(digest, _refundInfo.signature);
     }

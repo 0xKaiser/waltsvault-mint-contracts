@@ -36,6 +36,9 @@ contract WaltsVaultReservation is Ownable, Signer {
     mapping(address => uint[]) private tokensLockedBy;
     mapping(uint => address) public lockerOf;
     
+    address[] public FCFS_Reservers_List;
+    address[] public VL_Reservers_List;
+    
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => bool) public hasClaimedRefund;
     
@@ -75,6 +78,10 @@ contract WaltsVaultReservation is Ownable, Signer {
             require(maxAllowedAmt_VL >= resByAddr_VL[msg.sender] + amt_VL, "Exceeding reservation allowance");
             verifyOrderInfoSignature(info);
             
+            if(resByAddr_VL[msg.sender] == 0){
+                VL_Reservers_List.push(msg.sender);
+            }
+            
             isSignatureUsed[info.signature] = true;
             resByAddr_VL[msg.sender] += amt_VL;
             
@@ -84,6 +91,10 @@ contract WaltsVaultReservation is Ownable, Signer {
         if(amt_FCFS > 0){
             require(state == currentState.LIVE,"Reservation not live");
             require(MAX_RES_PER_ADDR_FCFS >= resByAddr_FCFS[msg.sender] + amt_FCFS, "Exceeding reservation allowance");
+            
+            if(resByAddr_FCFS[msg.sender] == 0){
+                FCFS_Reservers_List.push(msg.sender);
+            }
             
             resByAddr_FCFS[msg.sender] += amt_FCFS;
             
@@ -128,7 +139,6 @@ contract WaltsVaultReservation is Ownable, Signer {
         if (pending > address(this).balance) {
             pending = address(this).balance;
         }
-        
         totalWithdrawal += pending;
         payable(msg.sender).transfer(pending);
     }
@@ -160,6 +170,7 @@ contract WaltsVaultReservation is Ownable, Signer {
     }
     
     // Setters
+    
     function setMaxResPerAddr(
         uint256 maxResPerAddr_VL, 
         uint256 maxResPerAddr_FCFS
@@ -178,8 +189,46 @@ contract WaltsVaultReservation is Ownable, Signer {
         designatedSigner = _designatedSigner;
     }
     
-    function setRavendale(address _ravendaleAddr) external onlyOwner {
-        ravendale = IERC721(_ravendaleAddr);
+    function setRavendale(address ravendaleAddr) external onlyOwner {
+        ravendale = IERC721(ravendaleAddr);
+    }
+    
+    // Getter
+    
+    function getTokensLockedByAddr(address addr) external view returns(uint256[] memory){
+        return tokensLockedBy[addr];
+    }
+    
+    function getTotalTokensLocked(address addr) external view returns(uint256){
+        return tokensLockedBy[addr].length;
+    }
+    
+    function getTokenLockedByIndex(address addr, uint256 index) external view returns(uint256){
+        return tokensLockedBy[addr][index];
+    }
+    
+    function getAllVL_Reservers() external view returns(address[] memory){
+        return VL_Reservers_List;
+    }
+    
+    function getTotalVL_Reservers() external view returns(uint256){
+        return VL_Reservers_List.length;
+    }
+    
+    function getVL_ReserverByIndex(uint256 index) external view returns(address){
+        return VL_Reservers_List[index];
+    }
+    
+    function getAllFCFS_Reservers() external view returns(address[] memory){
+        return FCFS_Reservers_List;
+    }
+    
+    function getTotalFCFS_Reservers() external view returns(uint256){
+        return FCFS_Reservers_List.length;
+    }
+    
+    function getFCFS_ReserverByIndex(uint256 index) external view returns(address){
+        return FCFS_Reservers_List[index];
     }
     
     // Internal
