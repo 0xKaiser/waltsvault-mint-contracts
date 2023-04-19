@@ -10,7 +10,8 @@ contract WaltsVault is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     RevokableDefaultOperatorFiltererUpgradeable 
-{    
+{
+    uint256 public maxSupply;
     string public baseURI;   
     mapping(address => bool) public isController;
     
@@ -22,6 +23,7 @@ contract WaltsVault is
     function initialize(string memory name, string memory symbol) external initializer {
         __Ownable_init();
         __ERC721A_init(name,symbol);
+        maxSupply = 1000;
         __RevokableDefaultOperatorFilterer_init();
     }
     
@@ -31,6 +33,7 @@ contract WaltsVault is
     ) external onlyController(msg.sender) {
         require(to.length == amount.length, "Invalid Input");
         for(uint256 i = 0; i < to.length; i++) {
+            require(maxSupply >= totalSupply()+ amount[i]);
             _mint(to[i],amount[i]);
         }
     }
@@ -46,6 +49,10 @@ contract WaltsVault is
     
     function toggleController(address controller) public onlyOwner {
         isController[controller] = !isController[controller];
+    }
+    
+    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
+        maxSupply = _maxSupply;
     }
     
     // Overrides

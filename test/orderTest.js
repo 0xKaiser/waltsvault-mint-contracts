@@ -1,26 +1,27 @@
-const { ethers, upgrades } = require("hardhat");
+const { ethers, upgrades, waffle } = require("hardhat");
 const Web3 = require("web3");
 const { fromWei } = Web3.utils;
 const { expect } = require("chai");
 
 describe("Order", async function () {
 
-    let order, owner, addr1, addr2, mock, nft;
+    let order, owner, addr1, addr2, mock, nft, price;
     before(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
-
+        price = 10;
         const Mock = await ethers.getContractFactory("MockERC721");
-        mock = await Mock.deploy('Mock', 'MOCK');
+        mock = await upgrades.deployProxy(Mock, ['MockERC721', 'MERC721']);
         await mock.deployed();
 
-        const NFT = await ethers.getContractFactory("WaultsVault");
-        nft = await upgrades.deployProxy(NFT, ['WaultsVault', 'WV'], { initializer: 'initialize' });
+        const NFT = await ethers.getContractFactory("WaltsVault");
+        nft = await upgrades.deployProxy(NFT, ['WaltsVault', 'WV'], { initializer: 'initialize' });
         await nft.deployed();
 
 
         const Order = await ethers.getContractFactory("WaltsVaultReservation");
-        order = await Order.deploy(mock.address,owner.address);
+        order = await upgrades.deployProxy(Order,[mock.address,owner.address,[owner.address,addr1.address,addr2.address],[70,20,10]]);
         await order.deployed();
+        await order.setReservationPrice(ethers.utils.parseEther(price.toString()))
 
         await mock.mint(owner.address, 10);
         await mock.mint(addr1.address, 11);
@@ -30,10 +31,8 @@ describe("Order", async function () {
     })
 
     it("Should not allow to reserve spots before opening", async function () {
-      await expect(order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther("0.02")})).to.be.revertedWith("Reservation not started yet")
+      await expect(order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther((price*2).toString())})).to.be.revertedWith("Reservation not live")
     })
-
-
 
     it("Should reserve a slot locking the mock tokens", async function () {
 
@@ -45,19 +44,22 @@ describe("Order", async function () {
         tx = await order.placeOrder([1,2,3],[1,1,owner.address,owner.address],0,0);
         await expect(tx)
             .to
-            .emit(order, "PlaceOrder")
+            .emit(order, "LockRavendale")
             .withArgs(owner.address,3)
 
-        expect(await order.getTotalTokensLockedByAddr(owner.address)).to.equal(3)
-        // console.log("Locked tokens by owner: ", await order.getTokensLockedByAddr(owner.address));
+        expect(await order.getTotalTokensLocked(owner.address)).to.equal(3)
 
-        tx = await order.connect(addr1).placeOrder([14,15,16],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther("0.01")})
+        tx = await order.connect(addr1).placeOrder([14,15,16],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther((price*1).toString())})
         await expect(tx)
             .to
-            .emit(order, "PlaceOrder")
-            .withArgs(addr1.address,4)
+            .emit(order, "LockRavendale")
+            .withArgs(addr1.address,14)
+        await expect(tx)
+            .to
+            .emit(order, "Reserve")
+            .withArgs(addr1.address,1)
 
-        expect(await order.getTotalTokensLockedByAddr(addr1.address)).to.equal(3)
+        expect(await order.getTotalTokensLocked(addr1.address)).to.equal(3)
         // console.log("Locked tokens by addr1: ", await order.getTokensLockedByAddr(addr1.address));
     });
 
@@ -67,20 +69,20 @@ describe("Order", async function () {
     });
 
     it("Should allow to reserve spots in FCFS", async function () {
-        let tx = await order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther("0.01")});
+        let tx = await order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther((price*1).toString())});
         await expect(tx)
             .to
-            .emit(order, "PlaceOrder")
+            .emit(order, "Reserve")
             .withArgs(addr1.address,1)
+        await order.connect(addr2).placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther((price*2).toString())});
     })
 
     it("Should revert if try to purchase more than the available spots in FCFS", async function () {
-       await expect(order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther("0.01")})).to.be.revertedWith("Exceeds max allowed reservation")
-       await expect(order.connect(addr2).placeOrder([],[1,1,owner.address,owner.address],0,3,{value: ethers.utils.parseEther("0.03")})).to.be.revertedWith("Exceeds max allowed reservation")
+       await expect(order.connect(addr1).placeOrder([],[1,1,owner.address,owner.address],0,1,{value: ethers.utils.parseEther((price*1).toString())})).to.be.revertedWith("Exceeding reservation allowance")
+       await expect(order.connect(addr2).placeOrder([],[1,1,owner.address,owner.address],0,3,{value: ethers.utils.parseEther((price*3).toString())})).to.be.revertedWith("Exceeding reservation allowance")
     })
 
     it("Should be able to return the mock tokens", async function () {
-        await order.startReturn();
         expect(await mock.ownerOf(1)).to.equal(order.address)
         expect(await mock.ownerOf(2)).to.equal(order.address)
         expect(await mock.ownerOf(3)).to.equal(order.address)
@@ -106,14 +108,34 @@ describe("Order", async function () {
         expect(await mock.ownerOf(14)).to.equal(addr1.address)
         expect(await mock.ownerOf(15)).to.equal(addr1.address)
         expect(await mock.ownerOf(16)).to.equal(addr1.address)
+    })
+
+    it("Checking Payment Splitter", async function () {
+
+        const provider = waffle.provider;
+
+        console.log("Current locked balance: ", ethers.utils.formatEther(await provider.getBalance(order.address)));
+
+        let balance = await provider.getBalance(addr2.address);
+        let tx = await order.releases(addr2.address);
+        console.log('Balance of addr2 before release: ', ethers.utils.formatEther(balance));
+        expect(await provider.getBalance(addr2.address)).to.equal(balance.add(ethers.utils.parseEther((4).toString())))
+
+        balance = await provider.getBalance(addr2.address);
+        console.log('Balance of addr2 after release: ', ethers.utils.formatEther(balance));
+
+        console.log("Current balance locked after 10% funds release : ", ethers.utils.formatEther(await provider.getBalance(order.address)));
+
+        await order.placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther((price*2).toString())});
+
+        console.log("Current locked after new funds came in: ", ethers.utils.formatEther(await provider.getBalance(order.address)));
+
+        tx = await order.releases(addr2.address);
+        balance = await provider.getBalance(addr2.address);
+        console.log('Balance of addr2 after 2nd release: ', ethers.utils.formatEther(balance));
+
 
     })
 
-    it('Mint from contract', async function () {
-        await nft.toggleController(owner.address);
-        await nft.mint(owner.address, 1);
-        await nft.mint(owner.address, 1);
-        await nft.mintToMultipleUsers([owner.address], [1]);
-    });
 
 })

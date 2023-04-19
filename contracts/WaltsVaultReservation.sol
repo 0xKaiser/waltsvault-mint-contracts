@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract WaltsVaultReservation is Ownable, Signer {
-
-    IERC721 public ravendale;
+contract WaltsVaultReservation is OwnableUpgradeable, Signer, PaymentSplitterUpgradeable {
+    
+    IERC721Upgradeable public ravendale;
     
     event LockRavendale(address indexed locker, uint256 indexed tokenId);
     event ReserveVaultList(address reserver, uint256 indexed reserveAmount);
@@ -25,11 +26,11 @@ contract WaltsVaultReservation is Ownable, Signer {
     address public designatedSigner;
     uint256 public totalWithdrawal;
 
-    uint public PRICE_PER_RES = 0.01 ether;
-    uint public MAX_RES_PER_ADDR_FCFS = 2;
-    uint public MAX_RES_PER_ADDR_VL = 2;
-    uint256 constant public MAX_AMT_FOR_RES = 1000;
-    uint256 public SIGNATURE_VALIDITY = 3 minutes;
+    uint public PRICE_PER_RES;
+    uint public MAX_RES_PER_ADDR_FCFS;
+    uint public MAX_RES_PER_ADDR_VL;
+    uint256 public MAX_AMT_FOR_RES ;
+    uint256 public SIGNATURE_VALIDITY;
     
     mapping(address => uint) public resByAddr_FCFS;
     mapping(address => uint) public resByAddr_VL;
@@ -42,11 +43,22 @@ contract WaltsVaultReservation is Ownable, Signer {
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => bool) public hasClaimedRefund;
     
-    constructor(address _ravendaleAddr, address _designatedSigner) {
+    function initialize(
+        address _ravendaleAddr,
+        address _designatedSigner,
+        address[] calldata _payee,
+        uint256[] calldata _shares
+    ) external initializer {
+        __Ownable_init();
         __Signer_init();
+        __PaymentSplitter_init(_payee, _shares);
         state = currentState.NOT_LIVE;
         designatedSigner = _designatedSigner;
-        ravendale = IERC721(_ravendaleAddr);
+        PRICE_PER_RES = 0.01 ether;
+        MAX_RES_PER_ADDR_FCFS =2;
+        MAX_RES_PER_ADDR_VL = 2;
+        MAX_AMT_FOR_RES = 1000;
+        ravendale = IERC721Upgradeable(_ravendaleAddr);
     }
     
     function placeOrder(
@@ -57,7 +69,6 @@ contract WaltsVaultReservation is Ownable, Signer {
     ) external payable {
         
         if(tokensToLock.length > 0){
-            require(state != currentState.NOT_LIVE, "Reservation not live");
             
             for(uint i=0; i<tokensToLock.length; i++){
                 tokensLockedBy[msg.sender].push(tokensToLock[i]);
@@ -150,7 +161,7 @@ contract WaltsVaultReservation is Ownable, Signer {
     ) external onlyOwner {
         require(receivers.length == tokenIds.length, "Invalid input");
         for(uint i=0; i<receivers.length; i++){
-            IERC721(waltsVault).safeTransferFrom(address(this), receivers[i], tokenIds[i]);
+            IERC721Upgradeable(waltsVault).safeTransferFrom(address(this), receivers[i], tokenIds[i]);
         }
     }
     
@@ -190,7 +201,16 @@ contract WaltsVaultReservation is Ownable, Signer {
     }
     
     function setRavendale(address ravendaleAddr) external onlyOwner {
-        ravendale = IERC721(ravendaleAddr);
+        ravendale = IERC721Upgradeable(ravendaleAddr);
+    }
+    
+    function setMaxAmtForRes(uint256 maxAmtForRes) external onlyOwner {
+        require(state == currentState.NOT_LIVE);
+        MAX_AMT_FOR_RES = maxAmtForRes;
+    }
+    
+    function setSignatureValidityTime(uint256 validityTime) external onlyOwner {
+        SIGNATURE_VALIDITY = validityTime;
     }
     
     // Getter
