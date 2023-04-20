@@ -12,7 +12,6 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     
     event FundsReleased(address to, uint256 indexed ethAmount, uint256 indexed wethAmount);
     event FundsReceived(address from, uint256 amount);
-    error AllFundsReleased();
     
     uint256 public creatorPercentage;
     uint256 public nftHolderPercentage;
