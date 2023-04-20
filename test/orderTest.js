@@ -19,7 +19,7 @@ describe("Order", async function () {
 
 
         const Order = await ethers.getContractFactory("WaltsVaultReservation");
-        order = await upgrades.deployProxy(Order,[mock.address,owner.address,[owner.address,addr1.address,addr2.address],[70,20,10]]);
+        order = await upgrades.deployProxy(Order,[mock.address,owner.address]);
         await order.deployed();
         await order.setReservationPrice(ethers.utils.parseEther(price.toString()))
 
@@ -27,7 +27,6 @@ describe("Order", async function () {
         await mock.mint(addr1.address, 11);
         await mock.setApprovalForAll(order.address, true);
         await mock.connect(addr1).setApprovalForAll(order.address, true);
-
     })
 
     it("Should not allow to reserve spots before opening", async function () {
@@ -109,33 +108,5 @@ describe("Order", async function () {
         expect(await mock.ownerOf(15)).to.equal(addr1.address)
         expect(await mock.ownerOf(16)).to.equal(addr1.address)
     })
-
-    it("Checking Payment Splitter", async function () {
-
-        const provider = waffle.provider;
-
-        console.log("Current locked balance: ", ethers.utils.formatEther(await provider.getBalance(order.address)));
-
-        let balance = await provider.getBalance(addr2.address);
-        let tx = await order.releases(addr2.address);
-        console.log('Balance of addr2 before release: ', ethers.utils.formatEther(balance));
-        expect(await provider.getBalance(addr2.address)).to.equal(balance.add(ethers.utils.parseEther((4).toString())))
-
-        balance = await provider.getBalance(addr2.address);
-        console.log('Balance of addr2 after release: ', ethers.utils.formatEther(balance));
-
-        console.log("Current balance locked after 10% funds release : ", ethers.utils.formatEther(await provider.getBalance(order.address)));
-
-        await order.placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther((price*2).toString())});
-
-        console.log("Current locked after new funds came in: ", ethers.utils.formatEther(await provider.getBalance(order.address)));
-
-        tx = await order.releases(addr2.address);
-        balance = await provider.getBalance(addr2.address);
-        console.log('Balance of addr2 after 2nd release: ', ethers.utils.formatEther(balance));
-
-
-    })
-
 
 })

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "hardhat/console.sol";
 
 contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     
@@ -10,6 +11,8 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     IERC20Upgradeable public weth;
     
     event FundsReleased(address to, uint256 indexed ethAmount, uint256 indexed wethAmount);
+    event FundsReceived(address from, uint256 amount);
+    error AllFundsReleased();
     
     uint256 public creatorPercentage;
     uint256 public nftHolderPercentage;
@@ -19,6 +22,8 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     uint256 public WETH_FUNDS_STORED_FOR_HOLDERS;
     uint256 public TOTAL_ETH_FUNDS_RELEASED;
     uint256 public TOTAL_WETH_FUNDS_RELEASED;
+    uint256 public TOTAL_ETH_RELEASED_TO_CREATOR;
+    uint256 public TOTAL_WETH_RELEASED_TO_CREATOR;
     
     uint256 public ETHBalanceState;
     uint256 public WETHBalanceState;
@@ -29,26 +34,16 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     // This modifier updates the funds stored for the creator and the holders
     modifier updateStoredFunds() {
         uint256 fundsReceived = address(this).balance;
-        if (TOTAL_ETH_FUNDS_RELEASED <= 0) {
-            ETH_FUNDS_STORED_FOR_CREATOR = fundsReceived * creatorPercentage / 100;
-            ETH_FUNDS_STORED_FOR_HOLDERS = fundsReceived * nftHolderPercentage / 100;
-        }
-        else {
             uint256 value = fundsReceived - ETHBalanceState;
             ETH_FUNDS_STORED_FOR_CREATOR += value * creatorPercentage / 100;
             ETH_FUNDS_STORED_FOR_HOLDERS += value * nftHolderPercentage / 100;
-        }
+        
         
         fundsReceived = weth.balanceOf(address(this));
-        if (TOTAL_WETH_FUNDS_RELEASED <= 0) {
-            WETH_FUNDS_STORED_FOR_CREATOR = fundsReceived * creatorPercentage / 100;
-            WETH_FUNDS_STORED_FOR_HOLDERS = fundsReceived * nftHolderPercentage / 100;
-        }
-        else {
-            uint256 value = fundsReceived - WETHBalanceState;
+            value = fundsReceived - WETHBalanceState;
             WETH_FUNDS_STORED_FOR_CREATOR += value * creatorPercentage / 100;
             WETH_FUNDS_STORED_FOR_HOLDERS += value * nftHolderPercentage / 100;
-        }
+        
         _;
     }
     
@@ -122,6 +117,10 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
             wethFundsReleased += wethAmount;
         }
         
+        if (ethFundsReleased == 0 && wethFundsReleased == 0) {
+            revert ("No outstanding funds left to release");
+        }
+        
         TOTAL_ETH_FUNDS_RELEASED += ethFundsReleased;
         TOTAL_WETH_FUNDS_RELEASED += wethFundsReleased;
         
@@ -142,6 +141,13 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
         ETH_FUNDS_STORED_FOR_CREATOR = 0;
         WETH_FUNDS_STORED_FOR_CREATOR = 0;
         
+        TOTAL_ETH_RELEASED_TO_CREATOR += ethAmount;
+        TOTAL_WETH_RELEASED_TO_CREATOR += wethAmount;
+        
+        if (ethAmount == 0 && wethAmount == 0) {
+            revert ("No outstanding funds left to release");
+        }
+        
         payable(msg.sender).transfer(ethAmount);
         weth.transfer(msg.sender, wethAmount);
         
@@ -157,5 +163,9 @@ contract WaltsVaultFundsSplitter is OwnableUpgradeable{
     // This function returns the pending funds for a particular NFT token
     function pendingFundsForNFTHolder( uint256 fundsReceived, uint256 fundsReleased) internal view returns(uint256) {
         return (fundsReceived * 1) / nft.totalSupply() - fundsReleased;
+    }
+    
+    receive() external payable {
+        emit FundsReceived(msg.sender, msg.value);
     }
 }

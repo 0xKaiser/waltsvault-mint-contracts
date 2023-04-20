@@ -3,10 +3,9 @@ pragma solidity ^0.8.18;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract WaltsVaultReservation is OwnableUpgradeable, Signer, PaymentSplitterUpgradeable {
+contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     IERC721Upgradeable public ravendale;
     
@@ -45,13 +44,10 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer, PaymentSplitterUpg
     
     function initialize(
         address _ravendaleAddr,
-        address _designatedSigner,
-        address[] calldata _payee,
-        uint256[] calldata _shares
+        address _designatedSigner
     ) external initializer {
         __Ownable_init();
         __Signer_init();
-        __PaymentSplitter_init(_payee, _shares);
         state = currentState.NOT_LIVE;
         designatedSigner = _designatedSigner;
         PRICE_PER_RES = 0.01 ether;
