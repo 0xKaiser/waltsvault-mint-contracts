@@ -74,6 +74,7 @@ describe("Order", async function () {
             .emit(order, "Reserve")
             .withArgs(addr1.address,1)
         await order.connect(addr2).placeOrder([],[1,1,owner.address,owner.address],0,2,{value: ethers.utils.parseEther((price*2).toString())});
+        console.log("FCFS List",await order.getAllFCFS_Reservers());
     })
 
     it("Should revert if try to purchase more than the available spots in FCFS", async function () {

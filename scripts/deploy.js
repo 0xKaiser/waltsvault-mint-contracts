@@ -15,13 +15,15 @@ async function main() {
     // let tx = await mockERC721.mint("0x455217d7d192a447ea31c7584Dba9cbD84EfD973",20)
     // await tx.wait()
     const WaultsVault = await ethers.getContractFactory('WaltsVaultReservation');
-    // let waultsVault = await upgrades.deployProxy(WaultsVault,[mockERC721.address,owner.address]);
+    // let waultsVault = await upgrades.deployProxy(WaultsVault,["0xBE558404f27b4F525633957269F453E657e05B8A",owner.address]);
     // await waultsVault.deployed();
-    // tx = await waultsVault.openReservation()
+    // let tx = await waultsVault.openReservation()
     // await tx.wait()
     // console.log('WaultsVault deployed to:', waultsVault.address);
-    const waltsVault = await WaultsVault.attach("0xcaaB2f368a4B8d8A13C3ce1f88b50D084444c043")
-    let tx = await waltsVault.transferOwnership("0xca191a12662c3B875c2cac2Dc7E2EF09dFa20Cf4")
+    // // const waltsVault = await WaultsVault.attach("0xcaaB2f368a4B8d8A13C3ce1f88b50D084444c043")
+    // tx = await waultsVault.transferOwnership("0xca191a12662c3B875c2cac2Dc7E2EF09dFa20Cf4")
+    // await tx.wait()
+    tx = await waultsVault.placeOrder([],[1,1,owner.address,owner.address],0,2, {value: ethers.utils.parseEther("0.02")});
     await tx.wait()
     console.log("Transfered ownership")
 
