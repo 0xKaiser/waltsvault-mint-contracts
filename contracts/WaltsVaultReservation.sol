@@ -246,6 +246,13 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     function getFCFS_ReserverByIndex(uint256 index) external view returns(address){
         return FCFS_Reservers_List[index];
     }
+
+    function setStateForTesting(uint intState) external {
+        if(intState == 1) state = currentState.NOT_LIVE;
+        else if(intState == 2) state = currentState.LIVE;
+        else if(intState == 3) state = currentState.OVER;
+        else state = currentState.REFUND;
+    }
     
     // Internal
     function verifyOrderInfoSignature(orderInfo memory info) internal view {
