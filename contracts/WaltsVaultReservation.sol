@@ -303,7 +303,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     struct claimInfo {
         uint32 lastClaimTime;
-        uint256 totalReleased;
+        uint256 totalClaimed;
         uint256 totalValueToClaim;
     }
     mapping(uint256 => claimInfo) public claimInfoByTokenId;
@@ -323,8 +323,8 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
             uint256 timePassed = block.timestamp - lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased;
+            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
+                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
             }
             totalUnclaimed += totalToClaim;
         }
@@ -337,17 +337,17 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
             uint256 tokenId = tokensLockedBy[msg.sender][i];
             if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
                 claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartingTime);
-                claimInfoByTokenId[tokenId].totalReleased = 0;
+                claimInfoByTokenId[tokenId].totalClaimed = 0;
                 claimInfoByTokenId[tokenId].totalValueToClaim = vestingRewardPerToken;
             }
             uint256 timePassed = block.timestamp - claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased;
+            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
+                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
             }
             claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * vestingReleaseInterval);
-            claimInfoByTokenId[tokenId].totalReleased += totalToClaim;
+            claimInfoByTokenId[tokenId].totalClaimed += totalToClaim;
             totalUnclaimed += totalToClaim;
         }
         require(totalUnclaimed > 0, "Nothing to claim");
