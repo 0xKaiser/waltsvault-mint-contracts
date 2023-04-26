@@ -306,25 +306,25 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         uint256 totalReleased;
         uint256 totalValueToClaim;
     }
-    mapping(uint256 => claimInfo) public claimInfoByAddr;
+    mapping(uint256 => claimInfo) public claimInfoByTokenId;
     
     
     // Claim Merkle
     
     function getUnclaimedBalance(address user) public view returns(uint256) {
-        uint256 totalUnclaimed = 0;
+        uint256 totalUnclaimed;
         uint256 lastClaimTime;
         for (uint256 i=0; i<tokensLockedBy[user].length; i++){
             uint256 tokenId = tokensLockedBy[user][i];
-            if (claimInfoByAddr[tokenId].lastClaimTime == 0){
+            if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
                lastClaimTime = vestingStartingTime;
             }
-            lastClaimTime = claimInfoByAddr[tokenId].lastClaimTime;
+            lastClaimTime = claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 timePassed = block.timestamp - lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased){
-                totalToClaim = claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased;
+            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased){
+                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased;
             }
             totalUnclaimed += totalToClaim;
         }
@@ -332,26 +332,26 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     }
     
     function claimMerkel() external {
-     uint256 totalClaimed;
+     uint256 totalUnclaimed;
         for (uint256 i=0; i<tokensLockedBy[msg.sender].length; i++){
             uint256 tokenId = tokensLockedBy[msg.sender][i];
-            if (claimInfoByAddr[tokenId].lastClaimTime == 0){
-                claimInfoByAddr[tokenId].lastClaimTime = uint32(vestingStartingTime);
-                claimInfoByAddr[tokenId].totalReleased = 0;
-                claimInfoByAddr[tokenId].totalValueToClaim = vestingRewardPerToken;
+            if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
+                claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartingTime);
+                claimInfoByTokenId[tokenId].totalReleased = 0;
+                claimInfoByTokenId[tokenId].totalValueToClaim = vestingRewardPerToken;
             }
-            uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
+            uint256 timePassed = block.timestamp - claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased){
-                totalToClaim = claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased;
+            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased){
+                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalReleased;
             }
-            claimInfoByAddr[tokenId].lastClaimTime += uint32(totalIntervalsPassed * vestingReleaseInterval);
-            claimInfoByAddr[tokenId].totalReleased += totalToClaim;
-            totalClaimed += totalToClaim;
+            claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * vestingReleaseInterval);
+            claimInfoByTokenId[tokenId].totalReleased += totalToClaim;
+            totalUnclaimed += totalToClaim;
         }
-        require(totalClaimed > 0, "Nothing to claim");
-        merkel.transfer(msg.sender, totalClaimed);
+        require(totalUnclaimed > 0, "Nothing to claim");
+        merkel.transfer(msg.sender, totalUnclaimed);
     }
 }
     
