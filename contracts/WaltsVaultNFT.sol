@@ -16,6 +16,9 @@ contract WaltsVault is
 {
     IMerkel public merkel;
     
+    event ClaimMerkel(address indexed claimer, uint256 indexed tokenId, uint256 indexed amount);
+    event TokenBurnt(address indexed user, uint256 indexed tokenId);
+    
     struct claimInfo {
         uint8 rarity;
         uint32 lastClaimTime;
@@ -94,6 +97,7 @@ contract WaltsVault is
                 minimumReleaseAmount: totalAmount / vestingPeriod
             });
             _burn(info[i].tokenId);
+            emit TokenBurnt(msg.sender, info[i].tokenId);
         }
     }
     
@@ -114,6 +118,7 @@ contract WaltsVault is
             info.lastClaimTime = uint32(block.timestamp);
             info.totalReleased += totalValueToClaim;
             totalClaimed += totalValueToClaim;
+            emit ClaimMerkel(msg.sender, tokenId, totalValueToClaim);
         }
         require(totalClaimed > 0, "Nothing to Claim");
         merkel.mint(msg.sender, totalClaimed);
