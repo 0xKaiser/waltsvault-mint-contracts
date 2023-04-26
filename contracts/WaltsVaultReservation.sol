@@ -3,11 +3,13 @@ pragma solidity ^0.8.18;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {Signer} from "./utils/Signer.sol";
 
 contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     IERC721Upgradeable public ravendale;
+    IMerkel public merkel;
     
     event LockRavendale(address indexed locker, uint256 indexed tokenId);
     event ReserveVaultList(address reserver, uint256 indexed reserveAmount);
@@ -19,7 +21,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     event CloseReservation();
     event OpenRefundClaim();
     
-    enum currentState {NOT_LIVE, LIVE, OVER, REFUND}
+    enum currentState {NOT_LIVE, LIVE, OVER, REFUND, MERKEL_CLAIM}
     currentState public state;
     
     address public designatedSigner;
@@ -44,6 +46,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     function initialize(
         address _ravendaleAddr,
+        address _merkel,
         address _designatedSigner
     ) external initializer {
         __Ownable_init();
@@ -55,6 +58,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         MAX_RES_PER_ADDR_VL = 2;
         MAX_AMT_FOR_RES = 1000;
         ravendale = IERC721Upgradeable(_ravendaleAddr);
+        merkel = IMerkel(_merkel);
     }
     
     function placeOrder(
@@ -176,13 +180,16 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         emit OpenRefundClaim();
     }
     
+    function openMerkelClaim() external onlyOwner {
+        state = currentState.MERKEL_CLAIM;
+    }
+    
     // Setters
     
     function setMaxResPerAddr(
         uint256 maxResPerAddr_VL, 
         uint256 maxResPerAddr_FCFS
     ) external onlyOwner {
-        require(state == currentState.NOT_LIVE);
         MAX_RES_PER_ADDR_VL = maxResPerAddr_VL;
         MAX_RES_PER_ADDR_FCFS = maxResPerAddr_FCFS;
     }
@@ -207,6 +214,10 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     function setSignatureValidityTime(uint256 validityTime) external onlyOwner {
         SIGNATURE_VALIDITY = validityTime;
+    }
+    
+    function setMerkelAddress(address merkelAddr) external onlyOwner {
+        merkel = IMerkel(merkelAddr);
     }
     
     // Getter
@@ -269,6 +280,89 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         bytes memory
     ) public pure virtual returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+    
+    /**
+        * @notice Pass 0 for NOT_LIVE, 1 for LIVE, 2 for OVER, 3 for REFUND
+        * @dev This function is added for testing only. It is not part of the main contract.
+        * @param _state The state to change to.
+    */
+    function changeState(uint256 _state) external {
+        if (_state == 0) {
+            state = currentState.NOT_LIVE;
+        } else if (_state == 1) {
+            state = currentState.LIVE;
+        } else if (_state == 2) {
+            state = currentState.OVER;
+        } else if (_state == 3) {
+            state = currentState.REFUND;
+        } else {
+            revert("Invalid state");
+        }
+    }
+    
+    mapping(address => uint256[]) public tokensLockedForMerkel;
+    uint256 public vestingStartingTime;
+    uint256 public vestingPeriodCount;
+    uint256 public vestingRewardPerToken;
+    uint256 public vestingReleaseInterval;
+    uint256 public minimumAmountReleasedPerInterval;
+    
+    struct claimInfo {
+        uint32 lastClaimTime;
+        uint256 totalReleased;
+        uint256 totalValueToClaim;
+    }
+    mapping(uint256 => claimInfo) public claimInfoByAddr;
+    
+    
+    // Claim Merkle
+    function lockRavendale(uint256[] calldata tokenIds) external {
+        require(state == currentState.MERKEL_CLAIM, "Not started");
+        for (uint256 i=0; i<tokenIds.length; i++){
+            require(ravendale.ownerOf(tokenIds[i]) == msg.sender, "Not owner");
+            tokensLockedForMerkel[msg.sender].push(tokenIds[i]);
+            claimInfoByAddr[tokenIds[i]] = claimInfo({
+                lastClaimTime: uint32(vestingStartingTime),
+                totalReleased: 0,
+                totalValueToClaim: vestingRewardPerToken
+            });
+            ravendale.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
+        }
+    }
+    
+    function getUnclaimedBalance(address user) public view returns(uint256) {
+        uint256 totalUnclaimed = 0;
+        for (uint256 i=0; i<tokensLockedForMerkel[user].length; i++){
+            uint256 tokenId = tokensLockedForMerkel[user][i];
+            uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
+            uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
+            uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
+            if (totalToClaim > claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased){
+                totalToClaim = claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased;
+            }
+            totalUnclaimed += totalToClaim;
+        }
+        return totalUnclaimed;
+    }
+    
+    function claimMerkel() external {
+        require(state == currentState.MERKEL_CLAIM, "Not started");
+     uint256 totalClaimed;
+        for (uint256 i=0; i<tokensLockedForMerkel[msg.sender].length; i++){
+            uint256 tokenId = tokensLockedForMerkel[msg.sender][i];
+            uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
+            uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
+            uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
+            if (totalToClaim > claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased){
+                totalToClaim = claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased;
+            }
+            claimInfoByAddr[tokenId].lastClaimTime += uint32(totalIntervalsPassed * vestingReleaseInterval);
+            claimInfoByAddr[tokenId].totalReleased += totalToClaim;
+            totalClaimed += totalToClaim;
+        }
+        require(totalClaimed > 0, "Nothing to claim");
+        merkel.transfer(msg.sender, totalClaimed);
     }
 }
     
