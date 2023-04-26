@@ -8,58 +8,27 @@ import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFi
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {RaritySigner} from "./utils/RaritySigner.sol";
 
-contract WaltsVault is
+contract WaltsVaultV2 is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     RevokableDefaultOperatorFiltererUpgradeable,
     RaritySigner
 {
-    IMerkel public merkel;
-    
-    event ClaimMerkel(address indexed claimer, uint256 indexed tokenId, uint256 indexed amount);
-    event TokenBurnt(address indexed user, uint256 indexed tokenId);
-    
-    struct claimInfo {
-        uint8 rarity;
-        uint32 lastClaimTime;
-        uint256 totalReleased;
-        uint256 totalValueToClaim;
-        uint256 minimumReleaseAmount;
-    }
-    
-    mapping(uint16 => claimInfo) public claimInfos;
-    // rarity => multiplier
-    mapping(uint8 => uint256) public rarityMultiplier;
-    mapping(address => bool) public isController;
-    mapping(address => uint16[]) private tokensBurntByUser;
-    mapping(bytes => bool) public isSignatureUsed;
     
     string public baseURI;
-    address public designatedSigner;
-    uint32 public nonceValidityTime;
-    uint256 public baseAmount;
-    uint256 public maxSupply;
-    uint256 public minimumInterval;
-    uint256 public vestingPeriod;
-
+    mapping(address => bool) public isController;
 
     modifier onlyController(address from) {
         require(isController[from], "Not a Controller");
         _;
     }
     
-    function initialize(string memory name, string memory symbol, address _merkel, address _designatedSigner) external
+    function initialize(string memory name, string memory symbol) external
     initializer {
         __Ownable_init();
         __ERC721A_init(name,symbol);
         __RevokableDefaultOperatorFilterer_init();
-        __Signer_init();
-        merkel = IMerkel(_merkel);
-        designatedSigner = _designatedSigner;
         maxSupply = 1000;
-        minimumInterval = 1 days;
-        vestingPeriod = 60;
-        baseAmount = 10_000 ether;
     }
     
     function airdrop(
@@ -73,6 +42,89 @@ contract WaltsVault is
         }
     }
     
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI;
+    }
+    
+    // Contract Setters
+    function toggleController(address controller) public onlyOwner {
+        isController[controller] = !isController[controller];
+    }
+    
+    function setBaseURI(string memory newBaseURI) public onlyOwner {
+        require(bytes(newBaseURI).length > 0);
+        baseURI = newBaseURI;
+    }
+    
+    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
+        maxSupply = _maxSupply;
+    }
+    
+    // OpenSea Operator Filterer
+    function _startTokenId() internal view virtual override returns (uint256) {
+        return 1;
+    }
+    
+    function setApprovalForAll(address operator, bool approved) public override onlyAllowedOperatorApproval(operator) {
+        super.setApprovalForAll(operator, approved);
+    }
+    
+    function approve(address operator, uint256 tokenId) public override onlyAllowedOperatorApproval(operator) {
+        super.approve(operator, tokenId);
+    }
+    
+    function transferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
+        super.transferFrom(from, to, tokenId);
+    }
+    
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+    
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
+        public
+        override
+        onlyAllowedOperator(from)
+    {
+        super.safeTransferFrom(from, to, tokenId, data);
+    }
+    
+    function owner()
+        public
+        view
+        virtual
+        override (OwnableUpgradeable, RevokableOperatorFiltererUpgradeable)
+        returns (address)
+    {
+        return OwnableUpgradeable.owner();
+    }
+    
+    IMerkel public merkel;
+    
+    event ClaimMerkel(address indexed claimer, uint256 indexed tokenId, uint256 indexed amount);
+    event TokenBurnt(address indexed user, uint256 indexed tokenId);
+    
+    address public designatedSigner;
+    uint32 public nonceValidityTime;
+    uint256 public baseAmount;
+    uint256 public maxSupply;
+    uint256 public minimumInterval;
+    uint256 public vestingPeriod;
+    
+    struct claimInfo {
+        uint8 rarity;
+        uint32 lastClaimTime;
+        uint256 totalReleased;
+        uint256 totalValueToClaim;
+        uint256 minimumReleaseAmount;
+    }
+    
+    mapping(uint16 => claimInfo) public claimInfos;
+    // rarity => multiplier
+    mapping(uint8 => uint256) public rarityMultiplier;
+    mapping(address => uint16[]) private tokensBurntByUser;
+    mapping(bytes => bool) public isSignatureUsed;
+    
     // Claim Merkel
     
     /**
@@ -80,7 +132,7 @@ contract WaltsVault is
          * @param info Array of claimInfo
     */
     function burnToClaim(rarityInfo[] memory info) external {
-    
+        
         for(uint256 i = 0; i < info.length; i++) {
             require(getRaritySigner(info[i]) == designatedSigner, "Invalid Signature");
             require(!isSignatureUsed[info[i].signature], "Signature Already Used");
@@ -124,10 +176,38 @@ contract WaltsVault is
         merkel.mint(msg.sender, totalClaimed);
     }
     
-    // Contract Getters
+    // Setter
+    function setRarityMultiplier(uint8 rarity, uint256 multiplier) public onlyOwner {
+        rarityMultiplier[rarity] = multiplier;
+    }
     
+    function setMinimumInterval(uint256 _minimumInterval) public onlyOwner {
+        minimumInterval = _minimumInterval;
+    }
+    
+    function setInstalmentPeriod(uint256 _vestingPeriod) public onlyOwner {
+        vestingPeriod = _vestingPeriod;
+    }
+    
+    function setTotalAmount(uint256 _baseAmount) public onlyOwner {
+        baseAmount = _baseAmount;
+    }
+    
+    function setDesignatedSigner(address _designatedSigner) public onlyOwner {
+        designatedSigner = _designatedSigner;
+    }
+    
+    function setMerkel(address _merkel) public onlyOwner {
+        merkel = IMerkel(_merkel);
+    }
+    
+    function signer_init()  external onlyOwner {
+        __Signer_init();
+    }
+    
+    // Contract Getters
     /**
-         * @return Total unclaimed Merkel token by the user
+		* @return Total unclaimed Merkel token by the user
          * @param user Address of the user
     */
     function getUnclaimedBalance(address user) public view returns(uint256) {
@@ -147,92 +227,11 @@ contract WaltsVault is
     }
     
     /**
-         * @return Array of tokens burnt by the user
+		* @return Array of tokens burnt by the user
          * @param user Address of the user
     */
     function getTokensBurnt(address user) public view returns(uint16[] memory) {
         return tokensBurntByUser[user];
     }
     
-    function _baseURI() internal view virtual override returns (string memory) {
-        return baseURI;
-    }
-    
-    // Contract Setters
-    
-    function toggleController(address controller) public onlyOwner {
-        isController[controller] = !isController[controller];
-    }
-    
-    function setBaseURI(string memory newBaseURI) public onlyOwner {
-        require(bytes(newBaseURI).length > 0);
-        baseURI = newBaseURI;
-    }
-    
-    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
-        maxSupply = _maxSupply;
-    }
-    
-    function setRarityMultiplier(uint8 rarity, uint256 multiplier) public onlyOwner {
-        rarityMultiplier[rarity] = multiplier;
-    }
-    
-    function setMinimumInterval(uint256 _minimumInterval) public onlyOwner {
-        minimumInterval = _minimumInterval;
-    }
-    
-    function setInstalmentPeriod(uint256 _vestingPeriod) public onlyOwner {
-        vestingPeriod = _vestingPeriod;
-    }
-    
-    function settotalAmount(uint256 _baseAmount) public onlyOwner {
-        baseAmount = _baseAmount;
-    }
-    
-    function setDesignatedSigner(address _designatedSigner) public onlyOwner {
-        designatedSigner = _designatedSigner;
-    }
-    
-    function setMerkel(address _merkel) public onlyOwner {
-        merkel = IMerkel(_merkel);
-    }
-    
-    // OpenSea Operator Filterer
-    function _startTokenId() internal view virtual override returns (uint256) {
-        return 1;
-    }
-    
-    function setApprovalForAll(address operator, bool approved) public override onlyAllowedOperatorApproval(operator) {
-        super.setApprovalForAll(operator, approved);
-    }
-    
-    function approve(address operator, uint256 tokenId) public override onlyAllowedOperatorApproval(operator) {
-        super.approve(operator, tokenId);
-    }
-    
-    function transferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
-        super.transferFrom(from, to, tokenId);
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
-        super.safeTransferFrom(from, to, tokenId);
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
-        public
-        override
-        onlyAllowedOperator(from)
-    {
-        super.safeTransferFrom(from, to, tokenId, data);
-    }
-    
-    function owner()
-        public
-        view
-        virtual
-        override (OwnableUpgradeable, RevokableOperatorFiltererUpgradeable)
-        returns (address)
-    {
-        return OwnableUpgradeable.owner();
-    }
 }

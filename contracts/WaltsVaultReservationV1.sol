@@ -3,20 +3,17 @@ pragma solidity ^0.8.18;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract WaltsVaultReservation is OwnableUpgradeable, Signer {
+contract WaltsVaultReservationV1 is OwnableUpgradeable, Signer {
     
     IERC721Upgradeable public ravendale;
-    IMerkel public merkel;
     
     event LockRavendale(address indexed locker, uint256 indexed tokenId);
     event ReserveVaultList(address reserver, uint256 indexed reserveAmount);
     event Reserve(address reserver, uint256 indexed reserveAmount);
     event ClaimRefund(address indexed claimer, uint256 indexed refundAmount);
     event ReleaseRavendale(address indexed receiver, uint256 indexed tokenId);
-    event ClaimMerkel(address indexed claimer, uint256 indexed tokenId, uint256 indexed amount);
     event OpenReservation();
     event CloseReservation();
     event OpenRefundClaim();
@@ -31,20 +28,9 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     uint public MAX_RES_PER_ADDR_VL;
     uint256 public MAX_AMT_FOR_RES ;
     uint256 public SIGNATURE_VALIDITY;
-    uint256 public vestingStartTime;
-    uint256 public merkelAllocationPerToken;
-    uint256 public minClaimInterval;
-    uint256 public minimumAmountReleasedPerInterval;
+   
     address[] public FCFS_Reservers_List;
     address[] public VL_Reservers_List;
-    
-    struct claimInfo {
-        uint32 lastClaimTime;
-        uint256 totalClaimed;
-        uint256 totalValueToClaim;
-    }
-    
-    mapping(uint256 => claimInfo) public claimInfoByTokenId;
     mapping(address => uint) public resByAddr_FCFS;
     mapping(address => uint) public resByAddr_VL;
     mapping(address => uint[]) private tokensLockedBy;
@@ -52,10 +38,8 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => bool) public hasClaimedRefund;
     
-  
     function initialize(
         address _ravendaleAddr,
-        address _merkel,
         address _designatedSigner
     ) external initializer {
         __Ownable_init();
@@ -67,7 +51,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         MAX_RES_PER_ADDR_VL = 2;
         MAX_AMT_FOR_RES = 1000;
         ravendale = IERC721Upgradeable(_ravendaleAddr);
-        merkel = IMerkel(_merkel);
     }
     
     function placeOrder(
@@ -139,31 +122,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         emit ClaimRefund(msg.sender, refundAmount);
     }
     
-    // Claim Merkle tokens
-    function claimMerkel() external {
-        uint256 totalUnclaimed;
-        for (uint256 i=0; i<tokensLockedBy[msg.sender].length; i++){
-            uint256 tokenId = tokensLockedBy[msg.sender][i];
-            if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
-                claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartTime);
-                claimInfoByTokenId[tokenId].totalClaimed = 0;
-                claimInfoByTokenId[tokenId].totalValueToClaim = merkelAllocationPerToken;
-            }
-            uint256 timePassed = block.timestamp - claimInfoByTokenId[tokenId].lastClaimTime;
-            uint256 totalIntervalsPassed = timePassed / minClaimInterval;
-            uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
-            }
-            claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * minClaimInterval);
-            claimInfoByTokenId[tokenId].totalClaimed += totalToClaim;
-            totalUnclaimed += totalToClaim;
-            emit ClaimMerkel(msg.sender, tokenId, totalToClaim);
-        }
-        require(totalUnclaimed > 0, "Nothing to claim");
-        merkel.transfer(msg.sender, totalUnclaimed);
-    }
-    
+   
     // Only Owner
     function releaseRavendale(
         address[] calldata lockers
@@ -244,29 +203,8 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     function setSignatureValidityTime(uint256 validityTime) external onlyOwner {
         SIGNATURE_VALIDITY = validityTime;
     }
-    
-    function setMerkelAddress(address merkelAddr) external onlyOwner {
-        merkel = IMerkel(merkelAddr);
-    }
-    
-    function setVestingStartTime(uint256 _vestingStartTime) external onlyOwner {
-        vestingStartTime = _vestingStartTime;
-    }
-    
-    function setMerkelAllocationPerToken(uint256 _merkelAllocationPerToken) external onlyOwner {
-        merkelAllocationPerToken = _merkelAllocationPerToken;
-    }
-    
-    function setMinClaimInterval(uint256 _minClaimInterval) external onlyOwner {
-        minClaimInterval = _minClaimInterval;
-    }
-    
-    function setMinimumAmountReleasedPerInterval(uint256 _minimumAmountReleasedPerInterval) external onlyOwner {
-        minimumAmountReleasedPerInterval = _minimumAmountReleasedPerInterval;
-    }
-    
+   
     // Getter
-    
     function getTokensLockedByAddr(address addr) external view returns(uint256[] memory){
         return tokensLockedBy[addr];
     }
@@ -301,26 +239,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     function getFCFS_ReserverByIndex(uint256 index) external view returns(address){
         return FCFS_Reservers_List[index];
-    }
-    
-    function getUnclaimedBalance(address user) public view returns(uint256) {
-        uint256 totalUnclaimed;
-        uint256 lastClaimTime;
-        for (uint256 i=0; i<tokensLockedBy[user].length; i++){
-            uint256 tokenId = tokensLockedBy[user][i];
-            if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
-                lastClaimTime = vestingStartTime;
-            }
-            lastClaimTime = claimInfoByTokenId[tokenId].lastClaimTime;
-            uint256 timePassed = block.timestamp - lastClaimTime;
-            uint256 totalIntervalsPassed = timePassed / minClaimInterval;
-            uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
-            }
-            totalUnclaimed += totalToClaim;
-        }
-        return totalUnclaimed;
     }
     
     // Internal
