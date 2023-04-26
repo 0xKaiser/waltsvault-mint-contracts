@@ -296,9 +296,9 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         }
     }
     
-    uint256 public vestingStartingTime;
-    uint256 public vestingRewardPerToken;
-    uint256 public vestingReleaseInterval;
+    uint256 public vestingStartTime;
+    uint256 public merkelAllocationPerToken;
+    uint256 public minClaimInterval;
     uint256 public minimumAmountReleasedPerInterval;
     
     struct claimInfo {
@@ -317,11 +317,11 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         for (uint256 i=0; i<tokensLockedBy[user].length; i++){
             uint256 tokenId = tokensLockedBy[user][i];
             if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
-               lastClaimTime = vestingStartingTime;
+               lastClaimTime = vestingStartTime;
             }
             lastClaimTime = claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 timePassed = block.timestamp - lastClaimTime;
-            uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
+            uint256 totalIntervalsPassed = timePassed / minClaimInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
             if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
                 totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
@@ -336,17 +336,17 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         for (uint256 i=0; i<tokensLockedBy[msg.sender].length; i++){
             uint256 tokenId = tokensLockedBy[msg.sender][i];
             if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
-                claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartingTime);
+                claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartTime);
                 claimInfoByTokenId[tokenId].totalClaimed = 0;
-                claimInfoByTokenId[tokenId].totalValueToClaim = vestingRewardPerToken;
+                claimInfoByTokenId[tokenId].totalValueToClaim = merkelAllocationPerToken;
             }
             uint256 timePassed = block.timestamp - claimInfoByTokenId[tokenId].lastClaimTime;
-            uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
+            uint256 totalIntervalsPassed = timePassed / minClaimInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
             if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
                 totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
             }
-            claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * vestingReleaseInterval);
+            claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * minClaimInterval);
             claimInfoByTokenId[tokenId].totalClaimed += totalToClaim;
             totalUnclaimed += totalToClaim;
         }
