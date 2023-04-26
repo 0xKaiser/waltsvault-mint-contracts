@@ -21,7 +21,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     event CloseReservation();
     event OpenRefundClaim();
     
-    enum currentState {NOT_LIVE, LIVE, OVER, REFUND, MERKEL_CLAIM}
+    enum currentState {NOT_LIVE, LIVE, OVER, REFUND}
     currentState public state;
     
     address public designatedSigner;
@@ -180,12 +180,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         emit OpenRefundClaim();
     }
     
-    function openMerkelClaim() external onlyOwner {
-        state = currentState.MERKEL_CLAIM;
-    }
-    
     // Setters
-    
     function setMaxResPerAddr(
         uint256 maxResPerAddr_VL, 
         uint256 maxResPerAddr_FCFS
@@ -301,7 +296,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         }
     }
     
-    mapping(address => uint256[]) public tokensLockedForMerkel;
     uint256 public vestingStartingTime;
     uint256 public vestingPeriodCount;
     uint256 public vestingRewardPerToken;
@@ -317,24 +311,11 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     
     // Claim Merkle
-    function lockRavendale(uint256[] calldata tokenIds) external {
-        require(state == currentState.MERKEL_CLAIM, "Not started");
-        for (uint256 i=0; i<tokenIds.length; i++){
-            require(ravendale.ownerOf(tokenIds[i]) == msg.sender, "Not owner");
-            tokensLockedForMerkel[msg.sender].push(tokenIds[i]);
-            claimInfoByAddr[tokenIds[i]] = claimInfo({
-                lastClaimTime: uint32(vestingStartingTime),
-                totalReleased: 0,
-                totalValueToClaim: vestingRewardPerToken
-            });
-            ravendale.safeTransferFrom(msg.sender, address(this), tokenIds[i]);
-        }
-    }
     
     function getUnclaimedBalance(address user) public view returns(uint256) {
         uint256 totalUnclaimed = 0;
-        for (uint256 i=0; i<tokensLockedForMerkel[user].length; i++){
-            uint256 tokenId = tokensLockedForMerkel[user][i];
+        for (uint256 i=0; i<tokensLockedBy[user].length; i++){
+            uint256 tokenId = tokensLockedBy[user][i];
             uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
@@ -347,10 +328,14 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     }
     
     function claimMerkel() external {
-        require(state == currentState.MERKEL_CLAIM, "Not started");
      uint256 totalClaimed;
-        for (uint256 i=0; i<tokensLockedForMerkel[msg.sender].length; i++){
-            uint256 tokenId = tokensLockedForMerkel[msg.sender][i];
+        for (uint256 i=0; i<tokensLockedBy[msg.sender].length; i++){
+            uint256 tokenId = tokensLockedBy[msg.sender][i];
+            if (claimInfoByAddr[tokenId].lastClaimTime == 0){
+                claimInfoByAddr[tokenId].lastClaimTime = uint32(vestingStartingTime);
+                claimInfoByAddr[tokenId].totalReleased = 0;
+                claimInfoByAddr[tokenId].totalValueToClaim = vestingRewardPerToken;
+            }
             uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
