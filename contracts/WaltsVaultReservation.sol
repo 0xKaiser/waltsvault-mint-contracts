@@ -297,7 +297,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     }
     
     uint256 public vestingStartingTime;
-    uint256 public vestingPeriodCount;
     uint256 public vestingRewardPerToken;
     uint256 public vestingReleaseInterval;
     uint256 public minimumAmountReleasedPerInterval;
@@ -314,9 +313,14 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     function getUnclaimedBalance(address user) public view returns(uint256) {
         uint256 totalUnclaimed = 0;
+        uint256 lastClaimTime;
         for (uint256 i=0; i<tokensLockedBy[user].length; i++){
             uint256 tokenId = tokensLockedBy[user][i];
-            uint256 timePassed = block.timestamp - claimInfoByAddr[tokenId].lastClaimTime;
+            if (claimInfoByAddr[tokenId].lastClaimTime == 0){
+               lastClaimTime = vestingStartingTime;
+            }
+            lastClaimTime = claimInfoByAddr[tokenId].lastClaimTime;
+            uint256 timePassed = block.timestamp - lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / vestingReleaseInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
             if (totalToClaim > claimInfoByAddr[tokenId].totalValueToClaim - claimInfoByAddr[tokenId].totalReleased){
