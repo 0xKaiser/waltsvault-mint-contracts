@@ -47,18 +47,18 @@ describe('Merkel Splitter', async function () {
         it("Should return exact value if called after 2 years", async function () {
             await time.increase(86400*30*30);
             await merkelSplitter.withdraw();
-            console.log("Addr 1:",ethers.utils.formatEther(await merkel.balanceOf(addr1.address)));
-            console.log("Addr 2:",ethers.utils.formatEther(await merkel.balanceOf(addr2.address)));
-            console.log("Addr 3:",ethers.utils.formatEther(await merkel.balanceOf(addr3.address)));
+            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('43055543.5'));
+            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('25833326.1'));
+            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('17222217.4'));
         })
 
-        // it("Claiming after 3 years", async function () {
-        //     await time.increase(86400*63);
-        //     await merkelSplitter.withdraw();
-        //     console.log("Addr 1:",ethers.utils.formatEther(await merkel.balanceOf(addr1.address)));
-        //     console.log("Addr 2:",ethers.utils.formatEther(await merkel.balanceOf(addr2.address)));
-        //     console.log("Addr 3:",ethers.utils.formatEther(await merkel.balanceOf(addr3.address)));
-        // })
+        it("Claiming after 3 years", async function () {
+            await time.increase(86400*30*5);
+            await merkelSplitter.withdraw();
+            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('49999986'));
+            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('29999991.6'));
+            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('19999994.4'));
+        })
 
     })
 

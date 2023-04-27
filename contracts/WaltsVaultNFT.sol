@@ -54,6 +54,7 @@ contract WaltsVault is
         __Ownable_init();
         __ERC721A_init(name,symbol);
         __RevokableDefaultOperatorFilterer_init();
+        __Signer_init();
         maxSupply = 8888;
         designatedSigner = _designatedSigner;
     }

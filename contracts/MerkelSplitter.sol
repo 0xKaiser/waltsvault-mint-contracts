@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "hardhat/console.sol";
 
 contract MerkelSplitter is OwnableUpgradeable{
 
@@ -64,11 +63,8 @@ contract MerkelSplitter is OwnableUpgradeable{
         for(uint256 i = 0; i < payee.length; i++) {
             uint256 payout = amountReleasedPerMonth * shares[payee[i]] / totalShares;
             totalReleased += payout * monthsPassed;
-            
-            console.log("Payout: %s", payout * monthsPassed/1e18);
             require(totalReleased <= maxRelease, "Max Release Reached");
             merkel.transfer(payee[i], payout * monthsPassed);
-            console.log("Contract Balance: %s", merkel.balanceOf(address(this))/1e18);
         }
 
     }

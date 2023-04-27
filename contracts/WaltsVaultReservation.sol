@@ -200,7 +200,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
             pending = address(this).balance;
         }
         totalWithdrawal += pending;
-        payable(msg.sender).transfer(pending);
+        payable(treasury).transfer(pending);
     }
     
     /**
