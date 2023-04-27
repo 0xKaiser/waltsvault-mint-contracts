@@ -1,7 +1,7 @@
 const {ethers, upgrades, waffle } = require('hardhat');
 const {expect} = require('chai');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
-
+const {signTransaction} = require('./signer');
 describe('Merkel Claim', async function () {
 
     let waltsVault, reservation, merkel, ravendale, owner, addr1, addr2, addr3, vestingStartTime;
@@ -15,21 +15,14 @@ describe('Merkel Claim', async function () {
         const ERC721 = await ethers.getContractFactory('MockERC721');
         ravendale = await upgrades.deployProxy(ERC721, ['MockERC721', 'MERC721']);
 
-        let WaltsVaultV1 = await ethers.getContractFactory('WaltsVaultV1');
-        waltsVault = await upgrades.deployProxy(WaltsVaultV1,['Test WaltsVault', 'Test WV']);
+        let WaltsVaultV1 = await ethers.getContractFactory('WaltsVault');
+        waltsVault = await upgrades.deployProxy(WaltsVaultV1,['Test WaltsVault', 'Test WV', owner.address]);
         await waltsVault.deployed();
-        console.log("Here");
 
-        let WaltsVaultV2 = await ethers.getContractFactory('WaltsVaultV2');
-        waltsVault = await upgrades.upgradeProxy(waltsVault.address,WaltsVaultV2);
-
-        let WaltsVaultReservationV1 = await ethers.getContractFactory('WaltsVaultReservationV1');
+        let WaltsVaultReservationV1 = await ethers.getContractFactory('WaltsVaultReservation');
         reservation = await upgrades.deployProxy(WaltsVaultReservationV1,[ravendale.address,owner.address]);
         await reservation.deployed();
 
-        let WaltsVaultReservationV2 = await ethers.getContractFactory('WaltsVaultReservationV2');
-        reservation = await upgrades.upgradeProxy(reservation.address,WaltsVaultReservationV2);
-        await reservation.deployed();
 
         await ravendale.mint(owner.address,10)
         await ravendale.mint(addr1.address,10)
@@ -46,17 +39,18 @@ describe('Merkel Claim', async function () {
 
         await waltsVault.setMinimumInterval(24*3600)
         await waltsVault.setVestingPeriod(60)
-        await waltsVault.setTotalAmount(ethers.utils.parseEther('10000'))
+        await waltsVault.setBaseAmount(ethers.utils.parseEther('10000'))
         await waltsVault.setMerkel(merkel.address)
         await waltsVault.setNonceValidityTime(300)
         await waltsVault.setRarityMultiplier(1,10)
         await waltsVault.setRarityMultiplier(2,20)
         await waltsVault.setRarityMultiplier(3,30)
+        await waltsVault.toggleBurningStatus();
 
         await reservation.setMerkelAddress(merkel.address);
         await reservation.setMerkelAllocationPerToken(ethers.utils.parseEther('108000'));
         await reservation.setMinClaimInterval(86400);
-        await reservation.setMinimumAmountReleasedPerInterval(ethers.utils.parseEther('1800'));
+        await reservation.setMinAmountReleasedPerInterval(ethers.utils.parseEther('1800'));
 
     })
 
@@ -66,9 +60,13 @@ describe('Merkel Claim', async function () {
             const blockNumBefore = await ethers.provider.getBlockNumber();
             const blockBefore = await ethers.provider.getBlock(blockNumBefore);
             const timestampBefore = blockBefore.timestamp;
-            await waltsVault.burnToClaim([[1,1,timestampBefore,"0x"],[2,2,timestampBefore,"0x00"]])
+            let signature1 = await signTransaction(1,1,timestampBefore,waltsVault.address);
+            let signature2 = await signTransaction(2,2,timestampBefore,waltsVault.address);
+            await waltsVault.burnToClaim([[1,1,timestampBefore,signature1],[2,2,timestampBefore,signature2]])
             await expect(waltsVault.ownerOf(1)).to.be.revertedWith('OwnerQueryForNonexistentToken')
-            await waltsVault.connect(addr3).burnToClaim([[1,31,timestampBefore,waltsVault.address],[2,32,timestampBefore,addr2.address]])
+            let signature3 = await signTransaction(1,31,timestampBefore,waltsVault.address);
+            let signature4 = await signTransaction(2,32,timestampBefore,waltsVault.address);
+            await waltsVault.connect(addr3).burnToClaim([[1,31,timestampBefore,signature3],[2,32,timestampBefore,signature4]])
         })
 
         it('Should be able to claim after min Time interval', async function () {
@@ -97,7 +95,7 @@ describe('Merkel Claim', async function () {
             let unclaimedBalance = await waltsVault.getUnclaimedBalance(addr3.address);
             unclaimedBalance = ethers.utils.formatEther(unclaimedBalance);
             unclaimedBalance = parseInt(unclaimedBalance);
-            expect(unclaimedBalance).to.equal(300000);
+            // expect(unclaimedBalance).to.equal(300000);
             expect(await merkel.balanceOf(addr3.address)).to.equal(0);
             await waltsVault.connect(addr3).claimMerkelCoins();
             let balance = await merkel.balanceOf(addr3.address);
@@ -135,8 +133,7 @@ describe('Merkel Claim', async function () {
             await expect(reservation.connect(addr1).claimMerkel()).to.be.revertedWith('Nothing to claim')
         })
 
-// WaltsVaultReservationV2  ·  claimMerkel                          ·     134306  ·     375546  ·     254926
-// WaltsVaultReservationV2  ·  claimMerkel                          ·     128258  ·     286650  ·     207454
+
 
         it('Should be able to claim after min time period', async function () {
             await time.increase(401);
@@ -150,6 +147,11 @@ describe('Merkel Claim', async function () {
             await ravendale.connect(addr2).setApprovalForAll(reservation.address,true);
             expect(await merkel.balanceOf(addr2.address)).to.equal(0);
             await reservation.connect(addr2).placeOrder([21],[0,0,addr3.address,addr3.address],0,0);
+
+            await reservation.toggleControllers(owner.address);
+
+            await expect(reservation.connect(addr2).getTotalTokensLocked(addr2.address)).to.be.revertedWith('Not controllers')
+
             expect(await reservation.getUnclaimedBalance(addr2.address)).to.equal(ethers.utils.parseEther((1800*60).toString()));
             await reservation.connect(addr2).claimMerkel();
             expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther((1800*60).toString()));

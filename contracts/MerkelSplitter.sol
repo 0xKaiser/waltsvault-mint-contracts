@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract MerkelSplitter is OwnableUpgradeable{
 
@@ -19,9 +20,12 @@ contract MerkelSplitter is OwnableUpgradeable{
         __Ownable_init();
         merkel = IERC20Upgradeable(_merkel);
         claimStart = block.timestamp + 365 days;
+        maxRelease = 100_000_000 ether;
+        lastClaim = claimStart;
         amountReleasedPerMonth = 2_777_777 ether;
     }
     
+    // 2_777_777 * 36 = 100_000_000
     
     function addPayee(address _payee, uint256 _shares) external onlyOwner {
         require(_payee != address(0), "Invalid Address");
@@ -53,15 +57,20 @@ contract MerkelSplitter is OwnableUpgradeable{
             totalShares += shares[payee[i]];
         }
         require(totalShares % 100 == 0, "Shares must be multiple of 100");
+        
+        uint256 lastClaimTime = lastClaim;
         lastClaim = block.timestamp;
-        totalReleased += amountReleasedPerMonth;
-        if (totalReleased > maxRelease) {
-            amountReleasedPerMonth = totalReleased - maxRelease;
-        }
+        uint256 monthsPassed = (block.timestamp - lastClaimTime) / 30 days;
         for(uint256 i = 0; i < payee.length; i++) {
             uint256 payout = amountReleasedPerMonth * shares[payee[i]] / totalShares;
-            merkel.transfer(payee[i], payout);
+            totalReleased += payout * monthsPassed;
+            
+            console.log("Payout: %s", payout * monthsPassed/1e18);
+            require(totalReleased <= maxRelease, "Max Release Reached");
+            merkel.transfer(payee[i], payout * monthsPassed);
+            console.log("Contract Balance: %s", merkel.balanceOf(address(this))/1e18);
         }
+
     }
 
 }

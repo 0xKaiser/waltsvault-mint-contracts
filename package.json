@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx hardhat test test/merkelTest.js"
+    "test": "npx hardhat test ",
+    "deploy-testnet":"npx hardhat run --network goerli scripts/deploy.js"
   },
   "repository": {
     "type": "git",

@@ -13,12 +13,12 @@ describe("Order", async function () {
         mock = await upgrades.deployProxy(Mock, ['MockERC721', 'MERC721']);
         await mock.deployed();
 
-        const NFT = await ethers.getContractFactory("WaltsVaultV1");
-        nft = await upgrades.deployProxy(NFT, ['WaltsVault', 'WV'], { initializer: 'initialize' });
+        const NFT = await ethers.getContractFactory("WaltsVault");
+        nft = await upgrades.deployProxy(NFT, ['WaltsVault', 'WV', owner.address], { initializer: 'initialize' });
         await nft.deployed();
 
 
-        const Order = await ethers.getContractFactory("WaltsVaultReservationV1");
+        const Order = await ethers.getContractFactory("WaltsVaultReservation");
         order = await upgrades.deployProxy(Order,[mock.address,owner.address]);
         await order.deployed();
         await order.setReservationPrice(ethers.utils.parseEther(price.toString()))
@@ -27,6 +27,8 @@ describe("Order", async function () {
         await mock.mint(addr1.address, 11);
         await mock.setApprovalForAll(order.address, true);
         await mock.connect(addr1).setApprovalForAll(order.address, true);
+
+        await order.toggleControllers(owner.address);
     })
 
     it("Should not allow to reserve spots before opening", async function () {

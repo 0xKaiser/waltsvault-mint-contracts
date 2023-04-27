@@ -15,19 +15,23 @@ async function main() {
     await mockERC721.deployed();
     console.log('MockERC721 deployed to:', mockERC721.address);
 
-    let designatedSigner = "";
+    let designatedSigner = "0xF30d71c7DDA7244842650F3D4D569eeb60C0960b";
 
-    const WaltsVault = await ethers.getContractFactory('WaltsVault');
-    let waltsVault = await upgrades.deployProxy(WaltsVault,['Test WaltsVault', 'Test WV',mockERC20.address, designatedSigner]);
+    const WaltsVault = await ethers.getContractFactory('WaltsVaultV1');
+    let waltsVault = await upgrades.deployProxy(WaltsVault,['Test WaltsVault', 'Test WV', designatedSigner]);
     await waltsVault.deployed();
     console.log('WaltsVault deployed to:', waltsVault.address);
-    await verify(waltsVault.address, [])
+    // await verify(waltsVault.address, [])
     
-    const WaultsVault = await ethers.getContractFactory('WaltsVaultReservation');
-    let waultsVault = await upgrades.deployProxy(WaultsVault,[mockERC721.address,mockERC20.address,owner.address]);
-    await waultsVault.deployed();
-    console.log('WaultsVault deployed to:', waultsVault.address);
-    await verify(waultsVault.address, [])
+    const WaultsVault = await ethers.getContractFactory('WaltsVaultReservationV1');
+    let reservation = await upgrades.deployProxy(WaultsVault,[mockERC721.address,owner.address]);
+    await reservation.deployed();
+    console.log('reservation deployed to:', reservation.address);
+    // await verify(waultsVault.address, [])
+
+    let tx = await reservation.toggleControllers(owner.address);
+    await tx.wait();
+    console.log('Controllers Toggled')
 }
 
 async function verify (contractAddress, args) {
