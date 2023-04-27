@@ -5,8 +5,8 @@ import {ERC721AUpgradeable} from "./utils/ERC721AUpgradeable.sol";
 import {RevokableOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableOperatorFiltererUpgradeable.sol";
 import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableDefaultOperatorFiltererUpgradeable.sol";
 import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFilterer.sol";
-import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {RaritySigner} from "./utils/RaritySigner.sol";
+import {IMerkel} from "./Interfaces/IMerkel.sol";
 
 contract WaltsVaultV2 is
     OwnableUpgradeable,
@@ -16,6 +16,7 @@ contract WaltsVaultV2 is
 {
     
     string public baseURI;
+    uint256 public maxSupply;
     mapping(address => bool) public isController;
 
     modifier onlyController(address from) {
@@ -107,7 +108,6 @@ contract WaltsVaultV2 is
     address public designatedSigner;
     uint32 public nonceValidityTime;
     uint256 public baseAmount;
-    uint256 public maxSupply;
     uint256 public minimumInterval;
     uint256 public vestingPeriod;
     
@@ -160,7 +160,7 @@ contract WaltsVaultV2 is
         uint totalClaimed;
         for(uint256 i=0; i<tokensBurntByUser[msg.sender].length;i++){
             uint16 tokenId = tokensBurntByUser[msg.sender][i];
-            claimInfo memory info = claimInfos[tokenId];
+            claimInfo storage info = claimInfos[tokenId];
             uint256 timeElapsed = block.timestamp - info.lastClaimTime;
             uint256 totalClaim = timeElapsed / minimumInterval;
             uint256 totalValueToClaim = totalClaim * info.minimumReleaseAmount;
@@ -177,6 +177,10 @@ contract WaltsVaultV2 is
     }
     
     // Setter
+    function setNonceValidityTime(uint32 _nonceValidityTime) public onlyOwner {
+        nonceValidityTime = _nonceValidityTime;
+    }
+    
     function setRarityMultiplier(uint8 rarity, uint256 multiplier) public onlyOwner {
         rarityMultiplier[rarity] = multiplier;
     }
@@ -185,7 +189,7 @@ contract WaltsVaultV2 is
         minimumInterval = _minimumInterval;
     }
     
-    function setInstalmentPeriod(uint256 _vestingPeriod) public onlyOwner {
+    function setVestingPeriod(uint256 _vestingPeriod) public onlyOwner {
         vestingPeriod = _vestingPeriod;
     }
     
@@ -199,10 +203,6 @@ contract WaltsVaultV2 is
     
     function setMerkel(address _merkel) public onlyOwner {
         merkel = IMerkel(_merkel);
-    }
-    
-    function signer_init()  external onlyOwner {
-        __Signer_init();
     }
     
     // Contract Getters

@@ -13,12 +13,12 @@ describe("Order", async function () {
         mock = await upgrades.deployProxy(Mock, ['MockERC721', 'MERC721']);
         await mock.deployed();
 
-        const NFT = await ethers.getContractFactory("WaltsVault");
+        const NFT = await ethers.getContractFactory("WaltsVaultV1");
         nft = await upgrades.deployProxy(NFT, ['WaltsVault', 'WV'], { initializer: 'initialize' });
         await nft.deployed();
 
 
-        const Order = await ethers.getContractFactory("WaltsVaultReservation");
+        const Order = await ethers.getContractFactory("WaltsVaultReservationV1");
         order = await upgrades.deployProxy(Order,[mock.address,owner.address]);
         await order.deployed();
         await order.setReservationPrice(ethers.utils.parseEther(price.toString()))

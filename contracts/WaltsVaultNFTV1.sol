@@ -5,30 +5,29 @@ import {ERC721AUpgradeable} from "./utils/ERC721AUpgradeable.sol";
 import {RevokableOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableOperatorFiltererUpgradeable.sol";
 import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableDefaultOperatorFiltererUpgradeable.sol";
 import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFilterer.sol";
+import {RaritySigner} from "./utils/RaritySigner.sol";
 
 contract WaltsVaultV1 is
     OwnableUpgradeable,
     ERC721AUpgradeable,
-    RevokableDefaultOperatorFiltererUpgradeable
+    RevokableDefaultOperatorFiltererUpgradeable,
+    RaritySigner
 {
-    
-    
-    mapping(address => bool) public isController;
     
     string public baseURI;
     uint256 public maxSupply;
-
-
+    mapping(address => bool) public isController;
+    
     modifier onlyController(address from) {
         require(isController[from], "Not a Controller");
         _;
     }
     
-    function initialize(string memory name, string memory symbol) external
-    initializer {
+    function initialize(string memory name, string memory symbol) external initializer {
         __Ownable_init();
         __ERC721A_init(name,symbol);
         __RevokableDefaultOperatorFilterer_init();
+        __Signer_init();
         maxSupply = 1000;
     }
     

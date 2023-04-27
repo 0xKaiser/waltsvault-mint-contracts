@@ -4,6 +4,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {Signer} from "./utils/Signer.sol";
+import "hardhat/console.sol";
 
 contract WaltsVaultReservationV2 is OwnableUpgradeable, Signer {
     
@@ -290,7 +291,6 @@ contract WaltsVaultReservationV2 is OwnableUpgradeable, Signer {
     struct claimInfo {
         uint32 lastClaimTime;
         uint256 totalClaimed;
-        uint256 totalValueToClaim;
     }
     mapping(uint256 => claimInfo) public claimInfoByTokenId;
     
@@ -319,7 +319,6 @@ contract WaltsVaultReservationV2 is OwnableUpgradeable, Signer {
         minimumAmountReleasedPerInterval = _minimumAmountReleasedPerInterval;
     }
     
-    
     // Claim Merkle tokens
     function claimMerkel() external {
         uint256 totalUnclaimed;
@@ -327,14 +326,12 @@ contract WaltsVaultReservationV2 is OwnableUpgradeable, Signer {
             uint256 tokenId = tokensLockedBy[msg.sender][i];
             if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
                 claimInfoByTokenId[tokenId].lastClaimTime = uint32(vestingStartTime);
-                claimInfoByTokenId[tokenId].totalClaimed = 0;
-                claimInfoByTokenId[tokenId].totalValueToClaim = merkelAllocationPerToken;
             }
             uint256 timePassed = block.timestamp - claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / minClaimInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
+            if (totalToClaim > merkelAllocationPerToken - claimInfoByTokenId[tokenId].totalClaimed){
+                totalToClaim = merkelAllocationPerToken - claimInfoByTokenId[tokenId].totalClaimed;
             }
             claimInfoByTokenId[tokenId].lastClaimTime += uint32(totalIntervalsPassed * minClaimInterval);
             claimInfoByTokenId[tokenId].totalClaimed += totalToClaim;
@@ -348,18 +345,19 @@ contract WaltsVaultReservationV2 is OwnableUpgradeable, Signer {
     // Getter
     function getUnclaimedBalance(address user) public view returns(uint256) {
         uint256 totalUnclaimed;
-        uint256 lastClaimTime;
         for (uint256 i=0; i<tokensLockedBy[user].length; i++){
             uint256 tokenId = tokensLockedBy[user][i];
+            uint256 lastClaimTime;
             if (claimInfoByTokenId[tokenId].lastClaimTime == 0){
                 lastClaimTime = vestingStartTime;
+            } else {
+                lastClaimTime = claimInfoByTokenId[tokenId].lastClaimTime;
             }
-            lastClaimTime = claimInfoByTokenId[tokenId].lastClaimTime;
             uint256 timePassed = block.timestamp - lastClaimTime;
             uint256 totalIntervalsPassed = timePassed / minClaimInterval;
             uint256 totalToClaim = totalIntervalsPassed * minimumAmountReleasedPerInterval;
-            if (totalToClaim > claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed){
-                totalToClaim = claimInfoByTokenId[tokenId].totalValueToClaim - claimInfoByTokenId[tokenId].totalClaimed;
+            if (totalToClaim > merkelAllocationPerToken - claimInfoByTokenId[tokenId].totalClaimed){
+                totalToClaim = merkelAllocationPerToken - claimInfoByTokenId[tokenId].totalClaimed;
             }
             totalUnclaimed += totalToClaim;
         }
