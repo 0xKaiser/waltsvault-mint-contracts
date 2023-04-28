@@ -461,7 +461,4 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     ) public pure virtual returns (bytes4) {
         return this.onERC721Received.selector;
     }
-    
-   
-    
 }
