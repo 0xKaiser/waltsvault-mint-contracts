@@ -8,7 +8,7 @@ import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFi
 import {RaritySigner} from "./utils/RaritySigner.sol";
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 
-contract WaltsVault is
+contract VaultNFT is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     RevokableDefaultOperatorFiltererUpgradeable,

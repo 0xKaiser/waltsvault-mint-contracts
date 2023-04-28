@@ -5,7 +5,7 @@ import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC7
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract WaltsVaultReservation is OwnableUpgradeable, Signer {
+contract Reservation is OwnableUpgradeable, Signer {
     
     IERC721Upgradeable public ravendale;
     IMerkel public merkel;
