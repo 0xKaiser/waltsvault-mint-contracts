@@ -462,6 +462,24 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         return this.onERC721Received.selector;
     }
     
+    /**
+		 * @notice Pass 0 for NOT_LIVE, 1 for LIVE, 2 for OVER, 3 for REFUND
+         * @dev This function is added for testing only. It is not part of the main contract.
+         * @param _state The state to change to.
+     */
+    function changeState(uint256 _state) external {
+        if (_state == 0) {
+            state = currentState.NOT_LIVE;
+        } else if (_state == 1) {
+            state = currentState.LIVE;
+        } else if (_state == 2) {
+            state = currentState.OVER;
+        } else if (_state == 3) {
+            state = currentState.REFUND;
+        } else {
+            revert("Invalid state");
+        }
+    }
    
     
 }
