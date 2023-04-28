@@ -11,7 +11,7 @@ node --version
 This should print the version of Node.js that you have installed. If you get an error, make sure that Node.js is installed correctly.
 
 #### 2. Install Hardhat
-Extract the .zip and open the MerkelCoin folder in Terminal (Right click on the folder > Open in Terminal). 
+Extract the .zip and open the folder in the Terminal (Right click on the folder > Open in Terminal). 
 To install Hardhat, run the following command
 ```shell
 npm install
