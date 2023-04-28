@@ -19,12 +19,6 @@ contract WaltsVault is
     
     event ClaimedMerkel(address indexed claimer, uint256 indexed tokenId, uint256 indexed amount);
     event TokenBurnt(address indexed user, uint256 indexed tokenId);
-    
-    uint32 public nonceValidityTime;
-    uint256 public baseAmount;
-    uint256 public minimumInterval;
-    uint256 public vestingPeriod;
-    
     struct claimInfo {
         uint8 rarity;
         uint32 lastClaimTime;
@@ -34,9 +28,13 @@ contract WaltsVault is
     }
     
     string public baseURI;
-    uint256 public maxSupply;
     address public designatedSigner;
     bool public isBurningEnabled;
+    uint32 public nonceValidityTime;
+    uint256 public baseAmount;
+    uint256 public minimumInterval;
+    uint256 public vestingPeriod;
+    uint256 public maxSupply;
     mapping(address => bool) public isController;
     mapping(uint16 => claimInfo) public claimInfos;
     // rarity => multiplier
@@ -56,6 +54,8 @@ contract WaltsVault is
         __RevokableDefaultOperatorFilterer_init();
         __Signer_init();
         maxSupply = 8888;
+        nonceValidityTime = 3 minutes;
+        vestingPeriod = 90;
         designatedSigner = _designatedSigner;
     }
     

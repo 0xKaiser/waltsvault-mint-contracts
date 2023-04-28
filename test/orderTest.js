@@ -19,7 +19,7 @@ describe("Order", async function () {
 
 
         const Order = await ethers.getContractFactory("WaltsVaultReservation");
-        order = await upgrades.deployProxy(Order,[mock.address,owner.address]);
+        order = await upgrades.deployProxy(Order,[mock.address,owner.address, owner.address]);
         await order.deployed();
         await order.setReservationPrice(ethers.utils.parseEther(price.toString()))
 

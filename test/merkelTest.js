@@ -20,7 +20,7 @@ describe('Merkel Claim', async function () {
         await waltsVault.deployed();
 
         let WaltsVaultReservationV1 = await ethers.getContractFactory('WaltsVaultReservation');
-        reservation = await upgrades.deployProxy(WaltsVaultReservationV1,[ravendale.address,owner.address]);
+        reservation = await upgrades.deployProxy(WaltsVaultReservationV1,[ravendale.address,owner.address, owner.address]);
         await reservation.deployed();
 
 
