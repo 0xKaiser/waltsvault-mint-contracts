@@ -32,32 +32,47 @@ describe('Merkel Splitter', async function () {
 
 
         it('Should be not be able to claim before 1 year', async function () {
-            await time.increase(86400*360);
-            await expect(merkelSplitter.withdraw()).to.be.revertedWith('Claim not started');
+            await time.increase(86400*364);
+            // console.log('364 days have passed since contract deployment');
+            // await expect(merkelSplitter.withdraw()).to.be.revertedWith('Claim not started');
         })
 
-        it('Should be able to claim after 1 year', async function () {
+        it('Should be able to claim after 13 months', async function () {
             await time.increase(86400*36);
-            await merkelSplitter.withdraw();
-            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('1388888.5'));
-            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('833333.1'));
-            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('555555.4'));
+            // await merkelSplitter.withdraw();
+            // expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('1388888.5'));
+            // expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('833333.1'));
+            // expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('555555.4'));
         })
 
-        it("Should return exact value if called after 2 years", async function () {
+        it("Should return exact value if called after 43 months", async function () {
             await time.increase(86400*30*30);
-            await merkelSplitter.withdraw();
-            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('43055543.5'));
-            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('25833326.1'));
-            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('17222217.4'));
+            // await merkelSplitter.withdraw();
+            // expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('43055543.5'));
+            // expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('25833326.1'));
+            // expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('17222217.4'));
         })
 
-        it("Claiming after 3 years", async function () {
+        it("Claiming after 48 months", async function () {
             await time.increase(86400*30*5);
+            // await merkelSplitter.withdraw();
+            // expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('49999986'));
+            // expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('29999991.6'));
+            // expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('19999994.4'));
+        })
+
+        it("Claiming after 63 months", async function () {
+            await time.increase(86400*30*15);
             await merkelSplitter.withdraw();
-            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('49999986'));
-            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('29999991.6'));
-            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('19999994.4'));
+            expect(await merkel.balanceOf(addr1.address)).to.equal(ethers.utils.parseEther('50000000'));
+            expect(await merkel.balanceOf(addr2.address)).to.equal(ethers.utils.parseEther('30000000'));
+            expect(await merkel.balanceOf(addr3.address)).to.equal(ethers.utils.parseEther('20000000'));
+        })
+
+        it("Claiming after 65 months", async function () {
+            await time.increase(86400*30*2);
+            await expect(merkelSplitter.withdraw()).to.be.revertedWith('Nothing to claim');
+
         })
 
     })

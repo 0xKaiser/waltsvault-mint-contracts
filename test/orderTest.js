@@ -111,4 +111,10 @@ describe("Order", async function () {
         expect(await mock.ownerOf(16)).to.equal(addr1.address)
     })
 
+    it("Airdropping Single Token", async ()=> {
+        await nft.toggleController(owner.address)
+        let tx = await nft.airdrop([addr1.address], [1]);
+    })
+
+
 })
