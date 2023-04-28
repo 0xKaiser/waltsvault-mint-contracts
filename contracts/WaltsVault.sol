@@ -51,8 +51,7 @@ contract WaltsVault is
     ERC721AUpgradeable,
     RaritySigner,
     RevokableDefaultOperatorFiltererUpgradeable
-{
-    
+{  
     string public baseURI;
     uint256 public maxSupply;
     
@@ -83,8 +82,7 @@ contract WaltsVault is
         }
     }
     
-    // Contract Setters
-    
+    // Setters
     function toggleController(address controller) public onlyOwner {
         isController[controller] = !isController[controller];
     }
