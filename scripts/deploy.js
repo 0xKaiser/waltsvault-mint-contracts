@@ -4,7 +4,7 @@ async function main() {
     let owner;
     [owner] = await ethers.getSigners();
   
-    let ravendale = "";
+    let ravendale = "0xf83A99E084C1D575AF8e12FF492F5E6C7b768b48";
     let designatedSigner = "0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6";
     let treasury = "";
 
