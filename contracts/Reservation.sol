@@ -430,6 +430,10 @@ contract Reservation is OwnableUpgradeable, Signer {
         return FCFS_Reservers_List[index];
     }
     
+    function getBalAndLockedTokensOf(address user) external view returns(uint256, uint256){
+        return (ravendale.balanceOf(user), tokensLockedBy[user].length);
+    }
+    
     // Internal
     /**
         * @dev Function is used to verify the signature of the order info
