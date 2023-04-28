@@ -29,5 +29,7 @@ You’re now ready to deploy your contract. To do so, simply run the following c
 ```shell
 npm run deploy
 ```
-This will also verify the contracts and print out the contract address.
+This will also verify the contracts and print out the contract address. In case the verification fails, run the following command
+```shell
+npx hardhat verify --network mainnet *contractAddress*
 
