@@ -5,7 +5,7 @@ async function main() {
     [owner] = await ethers.getSigners();
   
     let ravendale = "";
-    let designatedSigner = "0xF30d71c7DDA7244842650F3D4D569eeb60C0960b";
+    let designatedSigner = "0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6";
     let treasury = "";
 
     const WaltsVault = await ethers.getContractFactory('WaltsVaultV1');
