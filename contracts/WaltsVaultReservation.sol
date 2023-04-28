@@ -53,17 +53,22 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     function initialize(
         address _ravendaleAddr,
-        address _designatedSigner
+        address _designatedSigner,
+        address _merkelAddr,
+        address _treasury
     ) external initializer {
         __Ownable_init();
         __Signer_init();
         state = currentState.NOT_LIVE;
         designatedSigner = _designatedSigner;
+        treasury = _treasury;
         PRICE_PER_RES = 0.01 ether;
         MAX_RES_PER_ADDR_FCFS =2;
         MAX_RES_PER_ADDR_VL = 2;
-        MAX_AMT_FOR_RES = 8888;
+        MAX_AMT_FOR_RES = 7928;
+        SIGNATURE_VALIDITY = 3 minutes;
         ravendale = IERC721Upgradeable(_ravendaleAddr);
+        merkel = IMerkel(_merkelAddr);
     }
     
     /**
