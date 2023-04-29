@@ -28,12 +28,13 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     }
     mapping(uint256 => claimInfo) public claimInfoByTokenId;
     
+    address public treasury;
+    address public designatedSigner;
+    address public waultsVault;
     uint256 public vestingStartTime;
     uint256 public merkelAllocationPerToken;
     uint256 public minClaimInterval;
     uint256 public minAmtClaimedPerInterval;
-    address public treasury;
-    address public designatedSigner;
     uint256 public totalWithdrawal;
     uint256 public PRICE_PER_RES;
     uint256 public MAX_RES_PER_ADDR_FCFS;
@@ -61,11 +62,11 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
         state = currentState.NOT_LIVE;
         designatedSigner = _designatedSigner;
         treasury = _treasury;
-        PRICE_PER_RES = 0.001 ether;
+        PRICE_PER_RES = 0.0928 ether;
         MAX_RES_PER_ADDR_FCFS =2;
         MAX_RES_PER_ADDR_VL = 2;
         MAX_AMT_FOR_RES = 7928;
-        SIGNATURE_VALIDITY = 3 minutes;
+        SIGNATURE_VALIDITY = 5 minutes;
         ravendale = IERC721Upgradeable(_ravendaleAddr);
     }
     
@@ -208,19 +209,20 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
     
     /**
         * @dev Function is used to airdrop the reserve tokens to the reservers
-        * @param waltsVault Address of the Walts Vault NFT
-        * @param receivers Array of reservers
         * @param tokenIds Array of tokenIds to airdrop
      */
     function airdropReserveTokens(
-        address waltsVault,
-        address[] calldata receivers,
         uint256[] calldata tokenIds
     ) external onlyOwner {
         require(receivers.length == tokenIds.length, "Invalid input");
         for(uint256 i=0; i<receivers.length; i++){
+            ravendale.safeTransferFrom(receivers[i], address(this), tokenIds[i]);
             IERC721Upgradeable(waltsVault).safeTransferFrom(address(this), receivers[i], tokenIds[i]);
         }
+    }
+    
+    function setWaultVault(address _waltsVault) external onlyOwner {
+        waltsVault = _waltsVault;
     }
     
     /**
