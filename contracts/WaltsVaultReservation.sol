@@ -28,7 +28,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 	
 	address public treasury;
 	address public designatedSigner;
-	address public waultsVault;
 	uint256 public totalWithdrawal;
 	uint256 public PRICE_PER_RES;
 	uint256 public MAX_RES_PER_ADDR_FCFS;
@@ -173,24 +172,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 		}
 		totalWithdrawal += pending;
 		payable(treasury).transfer(pending);
-	}
-	
-//	/**
-//		* @dev Function is used to airdrop the reserve tokens to the reservers
-//        * @param tokenIds Array of tokenIds to airdrop
-//     */
-//	function airdropReserveTokens(
-//		uint256[] calldata tokenIds
-//	) external onlyOwner {
-//		require(receivers.length == tokenIds.length, "Invalid input");
-//		for(uint256 i=0; i<receivers.length; i++){
-//			ravendale.safeTransferFrom(receivers[i], address(this), tokenIds[i]);
-//			IERC721Upgradeable(waltsVault).safeTransferFrom(address(this), receivers[i], tokenIds[i]);
-//		}
-//	}
-	
-	function setWaultVault(address _waltsVault) external onlyOwner {
-		waltsVault = _waltsVault;
 	}
 	
 	/**

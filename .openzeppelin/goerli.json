@@ -1,20 +1,10 @@
 {
   "manifestVersion": "3.2",
-  "admin": {
-    "address": "0xc74302976BE94FBB605D5BaFD9529e01Bd286784",
-    "txHash": "0xa129feb7f5ae9eb3e79f86e027a57efb4ba48a13344ab2d8e0b24d2910bddd95"
-  },
-  "proxies": [
-    {
-      "address": "0x2fBCf5042AdAA42c53cf5dbF8A421147Cb20C91b",
-      "txHash": "0xe6526c912a57ae40ebb11bae6ec82a82ab901aa8bd326516461fd8288e0047b0",
-      "kind": "transparent"
-    }
-  ],
+  "proxies": [],
   "impls": {
-    "c74c795becaa7a227579583a7f28ba8099bbbbe78f16b91f6bde58de9d346011": {
-      "address": "0x766fF7E476ca2e6d128D2D28ef15B924a9724B26",
-      "txHash": "0x67d79b55127c2636d2d3f104898fef9719a31cb2771e65b2631ec894c2286251",
+    "ef699fcb39b708694147aba2c65df6cc1f05a6f45947c67e2a9747d05b74cb43": {
+      "address": "0x8A18b81f8bE5570033Bd15497BA3c6C7eb049882",
+      "txHash": "0x7a0992f46a43d02f7b19b38d8b35550d9bb27de4202c598ff4c953b9fed8f55b",
       "layout": {
         "solcVersion": "0.8.18",
         "storage": [
@@ -60,81 +50,9 @@
             "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
           },
           {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC165Upgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
-          },
-          {
-            "label": "_currentIndex",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_uint256",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:67"
-          },
-          {
-            "label": "_burnCounter",
-            "offset": 0,
-            "slot": "152",
-            "type": "t_uint256",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:70"
-          },
-          {
-            "label": "_name",
-            "offset": 0,
-            "slot": "153",
-            "type": "t_string_storage",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:73"
-          },
-          {
-            "label": "_symbol",
-            "offset": 0,
-            "slot": "154",
-            "type": "t_string_storage",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:76"
-          },
-          {
-            "label": "_ownerships",
-            "offset": 0,
-            "slot": "155",
-            "type": "t_mapping(t_uint256,t_struct(TokenOwnership)3649_storage)",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:81"
-          },
-          {
-            "label": "_addressData",
-            "offset": 0,
-            "slot": "156",
-            "type": "t_mapping(t_address,t_struct(AddressData)3658_storage)",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:84"
-          },
-          {
-            "label": "_tokenApprovals",
-            "offset": 0,
-            "slot": "157",
-            "type": "t_mapping(t_uint256,t_address)",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:87"
-          },
-          {
-            "label": "_operatorApprovals",
-            "offset": 0,
-            "slot": "158",
-            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
-            "contract": "ERC721AUpgradeable",
-            "src": "contracts/utils/ERC721AUpgradeable.sol:90"
-          },
-          {
             "label": "_HASHED_NAME",
             "offset": 0,
-            "slot": "159",
+            "slot": "101",
             "type": "t_bytes32",
             "contract": "EIP712Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol:32"
@@ -142,7 +60,7 @@
           {
             "label": "_HASHED_VERSION",
             "offset": 0,
-            "slot": "160",
+            "slot": "102",
             "type": "t_bytes32",
             "contract": "EIP712Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol:33"
@@ -150,48 +68,180 @@
           {
             "label": "__gap",
             "offset": 0,
-            "slot": "161",
+            "slot": "103",
             "type": "t_array(t_uint256)50_storage",
             "contract": "EIP712Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol:120"
           },
           {
-            "label": "_isOperatorFilterRegistryRevoked",
+            "label": "ravendale",
             "offset": 0,
-            "slot": "211",
-            "type": "t_bool",
-            "contract": "RevokableOperatorFiltererUpgradeable",
-            "src": "contracts/OpenseaRegistries/RevokableOperatorFiltererUpgradeable.sol:17"
+            "slot": "153",
+            "type": "t_contract(IERC721Upgradeable)512",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:10"
           },
           {
-            "label": "baseURI",
-            "offset": 0,
-            "slot": "212",
-            "type": "t_string_storage",
-            "contract": "WaltsVault",
-            "src": "contracts/WaltsVault.sol:102"
+            "label": "state",
+            "offset": 20,
+            "slot": "153",
+            "type": "t_enum(currentState)3649",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:22"
           },
           {
-            "label": "maxSupply",
+            "label": "claimInfoByTokenId",
             "offset": 0,
-            "slot": "213",
+            "slot": "154",
+            "type": "t_mapping(t_uint256,t_struct(claimInfo)3657_storage)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:27"
+          },
+          {
+            "label": "treasury",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_address",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:29"
+          },
+          {
+            "label": "designatedSigner",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_address",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:30"
+          },
+          {
+            "label": "totalWithdrawal",
+            "offset": 0,
+            "slot": "157",
             "type": "t_uint256",
-            "contract": "WaltsVault",
-            "src": "contracts/WaltsVault.sol:102"
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:31"
           },
           {
-            "label": "isController",
+            "label": "PRICE_PER_RES",
             "offset": 0,
-            "slot": "214",
+            "slot": "158",
+            "type": "t_uint256",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:32"
+          },
+          {
+            "label": "MAX_RES_PER_ADDR_FCFS",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_uint256",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:33"
+          },
+          {
+            "label": "MAX_RES_PER_ADDR_VL",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_uint256",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:34"
+          },
+          {
+            "label": "MAX_AMT_FOR_RES",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_uint256",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:35"
+          },
+          {
+            "label": "SIGNATURE_VALIDITY",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_uint256",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:36"
+          },
+          {
+            "label": "FCFS_Reservers_List",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:38"
+          },
+          {
+            "label": "VL_Reservers_List",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:39"
+          },
+          {
+            "label": "resByAddr_FCFS",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:40"
+          },
+          {
+            "label": "resByAddr_VL",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:41"
+          },
+          {
+            "label": "tokensLockedBy",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:42"
+          },
+          {
+            "label": "lockerOf",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:43"
+          },
+          {
+            "label": "isSignatureUsed",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_mapping(t_bytes_memory_ptr,t_bool)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:44"
+          },
+          {
+            "label": "hasClaimedRefund",
+            "offset": 0,
+            "slot": "170",
             "type": "t_mapping(t_address,t_bool)",
-            "contract": "WaltsVault",
-            "src": "contracts/WaltsVault.sol:103"
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:45"
+          },
+          {
+            "label": "controllers",
+            "offset": 0,
+            "slot": "171",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "WaltsVaultReservation",
+            "src": "contracts/WaltsVaultReservation.sol:46"
           }
         ],
         "types": {
           "t_address": {
             "label": "address",
             "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
           },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]",
@@ -201,6 +251,10 @@
             "label": "uint256[50]",
             "numberOfBytes": "1600"
           },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
           "t_bool": {
             "label": "bool",
             "numberOfBytes": "1"
@@ -209,95 +263,80 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
+          "t_bytes_memory_ptr": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IERC721Upgradeable)512": {
+            "label": "contract IERC721Upgradeable",
+            "numberOfBytes": "20"
+          },
+          "t_enum(currentState)3649": {
+            "label": "enum WaltsVaultReservation.currentState",
+            "members": [
+              "NOT_LIVE",
+              "LIVE",
+              "OVER",
+              "REFUND"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
           "t_mapping(t_address,t_bool)": {
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
-            "label": "mapping(address => mapping(address => bool))",
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(AddressData)3658_storage)": {
-            "label": "mapping(address => struct ERC721AUpgradeable.AddressData)",
+          "t_mapping(t_bytes_memory_ptr,t_bool)": {
+            "label": "mapping(bytes => bool)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_address)": {
             "label": "mapping(uint256 => address)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(TokenOwnership)3649_storage)": {
-            "label": "mapping(uint256 => struct ERC721AUpgradeable.TokenOwnership)",
+          "t_mapping(t_uint256,t_struct(claimInfo)3657_storage)": {
+            "label": "mapping(uint256 => struct WaltsVaultReservation.claimInfo)",
             "numberOfBytes": "32"
           },
-          "t_string_storage": {
-            "label": "string",
-            "numberOfBytes": "32"
-          },
-          "t_struct(AddressData)3658_storage": {
-            "label": "struct ERC721AUpgradeable.AddressData",
+          "t_struct(claimInfo)3657_storage": {
+            "label": "struct WaltsVaultReservation.claimInfo",
             "members": [
               {
-                "label": "balance",
-                "type": "t_uint64",
+                "label": "lastClaimTime",
+                "type": "t_uint32",
                 "offset": 0,
                 "slot": "0"
               },
               {
-                "label": "numberMinted",
-                "type": "t_uint64",
-                "offset": 8,
-                "slot": "0"
-              },
-              {
-                "label": "numberBurned",
-                "type": "t_uint64",
-                "offset": 16,
-                "slot": "0"
-              },
-              {
-                "label": "aux",
-                "type": "t_uint64",
-                "offset": 24,
-                "slot": "0"
-              }
-            ],
-            "numberOfBytes": "32"
-          },
-          "t_struct(TokenOwnership)3649_storage": {
-            "label": "struct ERC721AUpgradeable.TokenOwnership",
-            "members": [
-              {
-                "label": "addr",
-                "type": "t_address",
+                "label": "totalClaimed",
+                "type": "t_uint256",
                 "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "startTimestamp",
-                "type": "t_uint64",
-                "offset": 20,
-                "slot": "0"
-              },
-              {
-                "label": "burned",
-                "type": "t_bool",
-                "offset": 28,
-                "slot": "0"
+                "slot": "1"
               }
             ],
-            "numberOfBytes": "32"
+            "numberOfBytes": "64"
           },
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"
           },
-          "t_uint64": {
-            "label": "uint64",
-            "numberOfBytes": "8"
+          "t_uint32": {
+            "label": "uint32",
+            "numberOfBytes": "4"
           },
           "t_uint8": {
             "label": "uint8",
             "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes"
           }
         }
       }
