@@ -51,7 +51,7 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 		designatedSigner = _designatedSigner;
 		treasury = _treasury;
 		PRICE_PER_RES = 0.0928 ether;
-		MAX_RES_PER_ADDR_FCFS =2;
+		MAX_RES_PER_ADDR_FCFS = 2;
 		MAX_RES_PER_ADDR_VL = 2;
 		MAX_AMT_FOR_RES = 7928;
 		SIGNATURE_VALIDITY = 5 minutes;
