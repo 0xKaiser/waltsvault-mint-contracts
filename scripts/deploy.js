@@ -4,14 +4,16 @@ async function main() {
     let owner;
     [owner] = await ethers.getSigners();
 
-    const WaltsVault = await ethers.getContractFactory('WaltsVaultReservation');
-    let waltsVault = await upgrades.deployProxy(WaltsVault,["Walt's Vault", 'WV']);
-    await waltsVault.deployed();
-    console.log("----------------------")
-    console.log("Deployer address: ", owner.address);
-    console.log("Contract deployed at: ", waltsVault.address);
-    console.log("----------------------")
-    await verify(waltsVault.address, [])
+    let ravendale = "0xf83A99E084C1D575AF8e12FF492F5E6C7b768b48";
+    let designatedSigner = "0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6";
+    let treasury = "";
+
+    const Reservation = await ethers.getContractFactory('WaltsVaultReservation');
+    let reservation = await upgrades.deployProxy(Reservation,[ravendale,designatedSigner,treasury]);
+    await reservation.deployed();
+    console.log('reservation deployed to:', reservation.address);
+
+    await verify(reservation.address, []);
 }
 
 async function verify (contractAddress, args) {

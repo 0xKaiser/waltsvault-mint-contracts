@@ -31,19 +31,7 @@ module.exports = {
             accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
             saveDeployments: true,
             chainId: 1,
-        },
-        mumbai: {
-            url: "https://polygon-mumbai.infura.io/v3/6422400310bc4cb784d6a819632808b9",
-            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-            saveDeployments: true,
-            chainId: 80001,
-        },
-        polygon: {
-            url: "https://polygon-mainnet.infura.io/v3/6422400310bc4cb784d6a819632808b9",
-            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-            saveDeployments: true,
-            chainId: 137,
-        },
+        }
     },
     solidity: {
         version: "0.8.18",
@@ -56,11 +44,8 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
-            goerli: ETHERSCAN_API_KEY,
-            rinkeby: ETHERSCAN_API_KEY,
-            polygonMumbai: "VIT7XVFNT1RIGIMPDPY6QKEVJJ94DSNVVW",
-            polygon: 'VIT7XVFNT1RIGIMPDPY6QKEVJJ94DSNVVW',
-            mainnet: ETHERSCAN_API_KEY
+            goerli:'31WXEYFAGW4JBBSRRJZRJQB2GB5D6MB48W',
+            mainnet: '31WXEYFAGW4JBBSRRJZRJQB2GB5D6MB48W'
         },
     },
     gasReporter: {
