@@ -33,14 +33,13 @@ pragma solidity ^0.8.0;
 //..................▓▓▓▓▒.............................................................
 //....................................................................................
 //....................................................................................
-//................▓▒▒ a ~ land ~ far ~ far ~ away ~ yet ~ so ~ near ▒▒▓...............
+//..........▓▒▒ Once you open the Vault ~ imagination is the only limit ▒▒▓...........
 //....................................................................................
 //....................................dream.a.little..................................
 //....................................................................................
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import {IMerkel} from "./Interfaces/IMerkel.sol";
 import {Signer} from "./utils/Signer.sol";
 
 contract WaltsVaultReservation is OwnableUpgradeable, Signer {
@@ -308,18 +307,11 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 	}
 	
 	function getTotalTokensLocked(address addr) external view returns(uint256){
-		require(controllers[msg.sender], "Not controllers");
 		return tokensLockedBy[addr].length;
 	}
 	
 	function getTokenLockedByIndex(address addr, uint256 index) external view returns(uint256){
-		require(controllers[msg.sender], "Not controllers");
 		return tokensLockedBy[addr][index];
-	}
-	
-	function getAllVL_Reservers() external view returns(address[] memory){
-		require(controllers[msg.sender], "Not controllers");
-		return VL_Reservers_List;
 	}
 	
 	function getTotalVL_Reservers() external view returns(uint256){
@@ -330,11 +322,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 	function getVL_ReserverByIndex(uint256 index) external view returns(address){
 		require(controllers[msg.sender], "Not controllers");
 		return VL_Reservers_List[index];
-	}
-	
-	function getAllFCFS_Reservers() external view returns(address[] memory){
-		require(controllers[msg.sender], "Not controllers");
-		return FCFS_Reservers_List;
 	}
 	
 	function getTotalFCFS_Reservers() external view returns(uint256){
