@@ -14,7 +14,7 @@ async function main() {
 
     console.log('---------------------------')
     console.log('deployer address: ', owner.address);
-    console.log('reservation deployed to:', reservation.address);
+    console.log('reservation deployed at:', reservation.address);
     console.log('---------------------------')
 
 
