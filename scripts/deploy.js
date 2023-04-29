@@ -4,7 +4,7 @@ async function main() {
     let owner;
     [owner] = await ethers.getSigners();
 
-    const WaltsVault = await ethers.getContractFactory('WaltsVault');
+    const WaltsVault = await ethers.getContractFactory('WaltsVaultReservation');
     let waltsVault = await upgrades.deployProxy(WaltsVault,["Walt's Vault", 'WV']);
     await waltsVault.deployed();
     console.log("----------------------")
