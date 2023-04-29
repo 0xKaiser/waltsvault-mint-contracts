@@ -20,11 +20,6 @@ contract WaltsVaultReservation is OwnableUpgradeable, Signer {
 	
 	enum currentState {NOT_LIVE, LIVE, OVER, REFUND}
 	currentState public state;
-	struct claimInfo {
-		uint32 lastClaimTime;
-		uint256 totalClaimed;
-	}
-	mapping(uint256 => claimInfo) public claimInfoByTokenId;
 	
 	address public treasury;
 	address public designatedSigner;
