@@ -321,7 +321,7 @@
             "label": "_ownerships",
             "offset": 0,
             "slot": "155",
-            "type": "t_mapping(t_uint256,t_struct(TokenOwnership)8110_storage)",
+            "type": "t_mapping(t_uint256,t_struct(TokenOwnership)8094_storage)",
             "contract": "ERC721AUpgradeable",
             "src": "contracts/utils/ERC721AUpgradeable.sol:81"
           },
@@ -329,7 +329,7 @@
             "label": "_addressData",
             "offset": 0,
             "slot": "156",
-            "type": "t_mapping(t_address,t_struct(AddressData)8119_storage)",
+            "type": "t_mapping(t_address,t_struct(AddressData)8103_storage)",
             "contract": "ERC721AUpgradeable",
             "src": "contracts/utils/ERC721AUpgradeable.sol:84"
           },
@@ -465,7 +465,7 @@
             "label": "claimInfos",
             "offset": 0,
             "slot": "220",
-            "type": "t_mapping(t_uint16,t_struct(claimInfo)7141_storage)",
+            "type": "t_mapping(t_uint16,t_struct(claimInfo)7125_storage)",
             "contract": "VaultNFT",
             "src": "contracts/VaultNFT.sol:39"
           },
@@ -539,7 +539,7 @@
             "label": "mapping(address => mapping(address => bool))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(AddressData)8119_storage)": {
+          "t_mapping(t_address,t_struct(AddressData)8103_storage)": {
             "label": "mapping(address => struct ERC721AUpgradeable.AddressData)",
             "numberOfBytes": "32"
           },
@@ -547,7 +547,7 @@
             "label": "mapping(bytes => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint16,t_struct(claimInfo)7141_storage)": {
+          "t_mapping(t_uint16,t_struct(claimInfo)7125_storage)": {
             "label": "mapping(uint16 => struct VaultNFT.claimInfo)",
             "numberOfBytes": "32"
           },
@@ -555,7 +555,7 @@
             "label": "mapping(uint256 => address)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(TokenOwnership)8110_storage)": {
+          "t_mapping(t_uint256,t_struct(TokenOwnership)8094_storage)": {
             "label": "mapping(uint256 => struct ERC721AUpgradeable.TokenOwnership)",
             "numberOfBytes": "32"
           },
@@ -567,7 +567,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(AddressData)8119_storage": {
+          "t_struct(AddressData)8103_storage": {
             "label": "struct ERC721AUpgradeable.AddressData",
             "members": [
               {
@@ -597,7 +597,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(TokenOwnership)8110_storage": {
+          "t_struct(TokenOwnership)8094_storage": {
             "label": "struct ERC721AUpgradeable.TokenOwnership",
             "members": [
               {
@@ -621,7 +621,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(claimInfo)7141_storage": {
+          "t_struct(claimInfo)7125_storage": {
             "label": "struct VaultNFT.claimInfo",
             "members": [
               {

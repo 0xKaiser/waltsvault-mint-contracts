@@ -277,5 +277,9 @@ contract VaultNFT is
         return OwnableUpgradeable.owner();
     }
     
+    function transferOwnership(address newOwner) public override {
+        super.transferOwnership(newOwner);
+    }
+    
    
 }
