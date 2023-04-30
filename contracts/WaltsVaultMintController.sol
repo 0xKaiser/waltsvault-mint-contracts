@@ -105,27 +105,27 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	
 	
 	function mint(
-        uint256 amtRD,
-		uint256 amtVL,
-		uint256 amtPUBLIC,
+        uint256 amountRD,
+		uint256 amountVL,
+		uint256 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
-		signedData memory spotsVL
+		signedData memory spotsDataVL
 	) external payable {
-        uint256 amtTOTAL = amtRD + amtVL + amtPUBLIC;
+        uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
-        require(PRICE * amtTOTAL == msg.value, "mint: unacceptable payment");
-        require(MAX_AMOUNT_FOR_SALE >= totalSupply() + amtTOTAL, "mint: unacceptable amount"); 
+        require(PRICE * amountTOTAL == msg.value, "mint: unacceptable payment");
+        require(MAX_AMOUNT_FOR_SALE >= totalSupply() + amountTOTAL, "mint: unacceptable amount"); 
 
         if(tokensToLockRD.length > 0){
-            _ravendaleMint(amtRD, tokensToLockRD);
+            _ravendaleMint(amountRD, tokensToLockRD);
 		}
 		
-		if(amtVL > 0){
-            _vaultListMint(amtVL, spotsVL);
+		if(amountVL > 0){
+            _vaultListMint(amountVL, spotsDataVL);
 		}
 		
-		if(amtPUBLIC > 0){
-            _publicMint(amtPUBLIC);
+		if(amountPUBLIC > 0){
+            _publicMint(amountPUBLIC);
 		}
 	}
 
@@ -133,7 +133,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
     // ======== INTERNAL FUNCTIONS ======== //
 
 	function _ravendaleMint(
-		uint256 amtRD,
+		uint256 amountRD,
 		uint256[] calldata tokensToLockRD
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "ravendale: sale not started");
@@ -148,50 +148,50 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 			emit RavendaleClaim(msg.sender, tokensToLockRD[i]);
 		}
 		
-		if(amtRD > 0){
+		if(amountRD > 0){
 			require(block.timestamp <= END_TIME_VL, "ravendale: sale over");
-			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amtRD, "ravendale: unacceptable amount");
+			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amountRD, "ravendale: unacceptable amount");
 			
-			rdMintsBy[msg.sender] += amtRD;
-			WALTS_VAULT.mint(msg.sender, amtRD);
+			rdMintsBy[msg.sender] += amountRD;
+			WALTS_VAULT.mint(msg.sender, amountRD);
 	
-			emit RavendaleMint(msg.sender, amtRD);
+			emit RavendaleMint(msg.sender, amountRD);
 		}
 	}
 
 	function _vaultListMint(
-		amtVL,
-		signedData memory spotsVL
+		amountVL,
+		signedData memory spotsDataVL
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "vault list: sale not started");
 		require(block.timestamp <= END_TIME_VL, "vault list: sale over");
-		require(block.timestamp < spotsVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
+		require(block.timestamp < spotsDataVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
 		
-		require(getSigner(spotsVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
-		require(!isSignatureUsed[spotsVL.signature], "vault list: used signature");
+		require(getSigner(spotsDataVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
+		require(!isSignatureUsed[spotsDataVL.signature], "vault list: used signature");
 		
-		require(spotsVL.userAddress == msg.sender, "vault list: unauthorised address");
-		require(spotsVL.allocatedSpots * MAX_MINTS_PER_SPOT_VL >= vlMintsBy[msg.sender] + amtVL, "vault list: unacceptable amount");
+		require(spotsDataVL.userAddress == msg.sender, "vault list: unauthorised address");
+		require(spotsDataVL.allocatedSpots * MAX_MINTS_PER_SPOT_VL >= vlMintsBy[msg.sender] + amountVL, "vault list: unacceptable amount");
 	
-		isSignatureUsed[spotsVL.signature] = true;
+		isSignatureUsed[spotsDataVL.signature] = true;
 		
-		vlMintsBy[msg.sender] += amtVL
-		WALTS_VAULT.mint(msg.sender, amtVL);
+		vlMintsBy[msg.sender] += amountVL
+		WALTS_VAULT.mint(msg.sender, amountVL);
 	
-		emit VaultListMint(msg.sender, amtVL);
+		emit VaultListMint(msg.sender, amountVL);
 	}
 
 	function _publicMint(
-		uint256 amtPUBLIC
+		uint256 amountPUBLIC
 	) internal {
 		require(START_TIME_PUBLIC <= block.timestamp, "public: sale not started");
 		require(block.timestamp <= END_TIME_PUBLIC, "public: sale over");
-		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amtPUBLIC, "public: unacceptable amount");
+		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amountPUBLIC, "public: unacceptable amount");
 		
-		publicMintsBy[msg.sender] += amtPUBLIC;
-		WALTS_VAULT.mint(msg.sender, amtPUBLIC);
+		publicMintsBy[msg.sender] += amountPUBLIC;
+		WALTS_VAULT.mint(msg.sender, amountPUBLIC);
 		
-		emit PublicMint(msg.sender, amtPUBLIC);
+		emit PublicMint(msg.sender, amountPUBLIC);
 	}
 	
 
