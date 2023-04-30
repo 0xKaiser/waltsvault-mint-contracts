@@ -106,27 +106,27 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	}
 	
 	function mint(
-        uint256 amtRD,
-		uint256 amtVL,
-		uint256 amtPUBLIC,
+        uint256 amountRD,
+		uint256 amountVL,
+		uint256 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
 		orderInfo memory spotsVL
 	) external payable {
-        uint256 amtTOTAL = amtRD + amtVL + amtPUBLIC;
+        uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
         require(PRICE * amtTOTAL == msg.value, "mint: unacceptable payment");
         require(MAX_AMOUNT_FOR_SALE >= WALTS_VAULT.totalSupply() + amtTOTAL, "mint: unacceptable amount");
 
-        if(tokensToLockRD.length > 0){
-            _ravendaleMint(amtRD, tokensToLockRD);
+        if(tokensToLockRD.length){
+            _ravendaleMint(amountRD, tokensToLockRD);
 		}
 		
-		if(amtVL > 0){
-            _vaultListMint(amtVL, spotsVL);
+		if(amountVL){
+            _vaultListMint(amountVL, spotsDataVL);
 		}
 		
-		if(amtPUBLIC > 0){
-            _publicMint(amtPUBLIC);
+		if(amountPUBLIC){
+            _publicMint(amountPUBLIC);
 		}
 	}
 
@@ -134,7 +134,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
     // ======== INTERNAL FUNCTIONS ======== //
 
 	function _ravendaleMint(
-		uint256 amtRD,
+		uint256 amountRD,
 		uint256[] calldata tokensToLockRD
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "ravendale: sale not started");
@@ -148,14 +148,13 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 			emit RavendaleClaim(msg.sender, tokensToLockRD[i]);
 		}
 		
-		if(amtRD > 0){
-			require(block.timestamp <= END_TIME_VL, "ravendale: sale over");
-			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amtRD, "ravendale: unacceptable amount");
+		if(amountRD){
+			require(END_TIME_VL >= block.timestamp, "ravendale: sale over");
+			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amountRD, "ravendale: unacceptable amount");
 			
-			rdMintsBy[msg.sender] += amtRD;
 //			WALTS_VAULT.airdrop(receivers, uint256(tokensToMint));
-	
-			emit RavendaleMint(msg.sender, amtRD);
+			rdMintsBy[msg.sender] += amountRD;
+			emit RavendaleMint(msg.sender, amountRD);
 		}
 	}
 
@@ -168,30 +167,32 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		
 		require(block.timestamp < spotsVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
 		require(getSigner(spotsVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
-		require(!isSignatureUsed[spotsVL.signature], "vault list: used signature");
+		require(!isSignatureUsed[spotsVL.signature], "vault list: used signature");		
+		require(AUTHORISED_SIGNER == getSigner(spotsDataVL), "vault list: unauthorised signer");
+		require(!isSignatureUsed[spotsDataVL.signature], "vault list: used signature");
 		
-		require(spotsVL.userAddress == msg.sender, "vault list: unauthorised address");
-		require(spotsVL.allocatedSpots * MAX_MINTS_PER_SPOT_VL >= vlMintsBy[msg.sender] + amtVL, "vault list: unacceptable amount");
+		require(spotsDataVL.userAddress == msg.sender, "vault list: unauthorised address");
+		require(MAX_MINTS_PER_SPOT_VL * spotsDataVL.allocatedSpots >= vlMintsBy[msg.sender] + amountVL, "vault list: unacceptable amount");
 	
 		isSignatureUsed[spotsVL.signature] = true;
 		vlMintsBy[msg.sender] += amtVL;
 		
 //		WALTS_VAULT.airdrop([msg.sender], [amtVL]);
 	
-		emit VaultListMint(msg.sender, amtVL);
+		emit VaultListMint(msg.sender, amountVL);
 	}
 	
 	function _publicMint(
-		uint256 amtPUBLIC
+		uint256 amountPUBLIC
 	) internal {
 		require(START_TIME_PUBLIC <= block.timestamp, "public: sale not started");
-		require(block.timestamp <= END_TIME_PUBLIC, "public: sale over");
-		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amtPUBLIC, "public: unacceptable amount");
+		require(END_TIME_PUBLIC >= block.timestamp, "public: sale over");
 		
 		publicMintsBy[msg.sender] += amtPUBLIC;
 //		WALTS_VAULT.airdrop([msg.sender], [amtPUBLIC]);
+		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amountPUBLIC, "public: unacceptable amount");
 		
-		emit PublicMint(msg.sender, amtPUBLIC);
+		emit PublicMint(msg.sender, amountPUBLIC);
 	}
 
 	// ======== OWNER FUNCTIONS ======== //
@@ -200,13 +201,12 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		address[] calldata lockers
 	) external onlyOwner {
 		for(uint256 j=0; j<lockers.length; j++){
-			uint256[] memory tokensToReturn = tokensLockedBy[lockers[j]];
-		
-			for(uint256 i=0; i<tokensToReturn.length; i++){
+			uint256[] memory tokensToRelease = tokensLockedBy[lockers[j]];
+				for(uint256 i=0; i<tokensToReturn.length; i++){
 				RAVENDALE.safeTransferFrom(address(this), lockers[j], tokensToReturn[i]);
 				lockerOf[tokensToReturn[i]] = address(0);
 				delete tokensLockedBy[lockers[j]];
-				emit ReleaseRavendale(lockers[j], tokensToReturn[i]);
+				emit ReleaseRavendale(lockers[j], tokensToRelease[i]);
 			}
 		}
 	}
@@ -233,7 +233,6 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	
 	function setSignatureValidityTime(uint16 validityTime) external onlyOwner {
 		SIGNATURE_VALIDITY = validityTime;
-	}
 	
 	function setPrice(uint256 _price) external onlyOwner {
 		PRICE = _price;
@@ -258,6 +257,9 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		return tokensLockedBy[addr][index];
 	}
 	
+
+	// ======== AUXILIARY FUNCTIONS ======== //
+
 	function onERC721Received(
 		address,
 		address,
