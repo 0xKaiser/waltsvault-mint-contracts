@@ -2,10 +2,11 @@
 pragma solidity ^0.8.0;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ITestNFT} from "./Interfaces/ITestNFT.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract TestMintController is OwnableUpgradeable, Signer {
+contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 	
 	ITestNFT public RD;
 	ITestNFT public WV;
@@ -47,6 +48,7 @@ contract TestMintController is OwnableUpgradeable, Signer {
 	function initialize() external initializer {
 		__Ownable_init();
 		__Signer_init();
+		__Pausable_init();
 		
         RD = ITestNFT(0xBeb297284e6D4E5b020e200C99E93400f21b2Cd7);
 		WV = ITestNFT(0xDa67FD1Cb01a81dADec6727b9D0B74a8F2Dc1437);
@@ -75,7 +77,7 @@ contract TestMintController is OwnableUpgradeable, Signer {
 		uint256 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
 		orderInfo memory spotsDataVL
-	) external payable {
+	) external payable whenNotPaused {
         uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
         require(PRICE * amountTOTAL == msg.value, "mint: unacceptable payment");
@@ -173,6 +175,17 @@ contract TestMintController is OwnableUpgradeable, Signer {
 	
 
 	// ======== OWNER FUNCTIONS ======== //
+	
+	/**
+       * @notice The function is used to pause/ unpause mint functions
+    */
+	function togglePause() external onlyOwner {
+		if (paused()) {
+			_unpause();
+		} else {
+			_pause();
+		}
+	}
         
 	function releaseRavendale(
 		address[] calldata lockers
