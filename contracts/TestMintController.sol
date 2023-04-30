@@ -222,6 +222,32 @@ contract TestMintController is OwnableUpgradeable, Signer {
 		MAX_AMOUNT_FOR_SALE = _amount;
 	}
 	
+	function setMaxMintsPerTokenRD(uint8 _amount) external onlyOwner {
+		MAX_MINTS_PER_TOKEN_RD = _amount;
+	}
+	
+	function setMaxMintsPerSpotVL(uint8 _amount) external onlyOwner {
+		MAX_MINTS_PER_SPOT_VL = _amount;
+	}
+	
+	function setMaxMintsPerAddrPublic(uint16 _amount) external onlyOwner {
+		MAX_MINTS_PER_ADDR_PUBLIC = _amount;
+	}
+	
+	function setStartEndTimeVL(uint32 _start, uint32 _end) external onlyOwner {
+		START_TIME_VL = _start;
+		END_TIME_VL = _end;
+	}
+	
+	function setStartEndTimePublic(uint32 _start, uint32 _end) external onlyOwner {
+		START_TIME_PUBLIC = _start;
+		END_TIME_PUBLIC = _end;
+	}
+	
+	function setStartEndTimeRavendale(uint32 _start, uint32 _end) external onlyOwner {
+		START_TIME_RD = _start;
+		END_TIME_RD = _end;
+	}
 
 	// ======== READ FUNCTIONS ======== //
 

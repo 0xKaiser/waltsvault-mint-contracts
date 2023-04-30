@@ -14,20 +14,14 @@ async function main() {
     // await waltsVault.deployed();
     // console.log('waltsVault deployed at:', waltsVault.address);
 
-    const Reservation = await ethers.getContractFactory('TestMintController');
-    const reservation = await upgrades.deployProxy(Reservation, []);
-    await reservation.deployed();
-    console.log('reservation deployed at:', reservation.address);
-
-
+    const MintController = await ethers.getContractFactory('TestMintController');
+    const mintController = await upgrades.deployProxy(MintController, []);
+    await mintController.deployed();
 
     console.log('---------------------------')
     console.log('deployer address: ', owner.address);
-    console.log('reservation deployed at:', reservation.address);
+    console.log('MintController deployed at:', mintController.address);
     console.log('---------------------------')
-
-
-    // await verify(reservation.address, []);
 }
 
 async function verify (contractAddress, args) {
