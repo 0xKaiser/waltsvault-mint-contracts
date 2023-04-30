@@ -118,7 +118,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
         uint256 amtTOTAL = amtRD + amtVL + amtPUBLIC;
 
         require(PRICE * amtTOTAL == msg.value, "mint: unacceptable payment");
-        require(MAX_AMOUNT_FOR_SALE >= amtTOTAL, "mint: unacceptable amount"); 
+        require(MAX_AMOUNT_FOR_SALE >= totalSupply() + amtTOTAL, "mint: unacceptable amount"); 
 
         if(tokensToLockRD.length > 0){
             _ravendaleMint(amtRD, tokensToLockRD);
