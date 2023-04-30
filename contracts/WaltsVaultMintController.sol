@@ -66,6 +66,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
  
 	uint256 public PRICE;
 	
+	uint16 public amountSold;
 	mapping(address => uint256) public rdMintsBy;
 	mapping(address => uint256) public vlMintsBy;
 	mapping(address => uint256) public publicMintsBy;
@@ -115,7 +116,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
         uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
         require(PRICE * amountTOTAL == msg.value, "mint: unacceptable payment");
-        require(MAX_AMOUNT_FOR_SALE >= WALTS_VAULT.totalSupply() + amountTOTAL, "mint: unacceptable amount");
+        require(MAX_AMOUNT_FOR_SALE >= amountSold + amountTOTAL, "mint: unacceptable amount");
 
         if(tokensToLockRD.length > 0){
             _ravendaleMint(amountRD, tokensToLockRD);
@@ -128,6 +129,8 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		if(amountPUBLIC > 0){
             _publicMint(amountPUBLIC);
 		}
+
+		amountSold += amountTOTAL;
 	}
 
 
