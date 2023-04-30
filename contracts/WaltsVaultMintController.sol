@@ -70,7 +70,6 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	mapping(uint256 => address) public lockerOf;
 	
     mapping(bytes => bool) private isSignatureUsed;
-	mapping(address => bool) public controllers;
 	
 	event RavendaleClaim(address indexed _claimer, uint256 indexed _tokenId);
 	event RavendaleMint(address _minter, uint256 indexed _amount);
@@ -79,30 +78,27 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	event ReleaseRavendale(address indexed _receiver, uint256 indexed _tokenId);
 	
 	
-	function initialize(
-		address _ravendale,
-		address _waltsVault,
-		address _treasury,
-		address _authorisedSigner
-	) external initializer {
+	function initialize() external initializer {
 		__Ownable_init();
 		__Signer_init();
 		
-        RAVENDALE = IERC721Upgradeable(_ravendale); // NOTE: can be explicitly assigned 
-		WALTS_VAULT = IERC721Upgradeable(_waltsVault); // NOTE: can be explicitly assigned
+        RAVENDALE = IERC721Upgradeable(0x97EaE183E6CB0D192d5820494d694312bd5436b7); 
+		WALTS_VAULT = IERC721Upgradeable(0x97EaE183E6CB0D192d5820494d694312bd5436b7); 
                 
-		TREASURY = _treasury; // NOTE: can be explicitly assigned
-        AUTHORISED_SIGNER = _authorisedSigner; // NOTE: can be explicitly assigned
+		TREASURY = 0x97EaE183E6CB0D192d5820494d694312bd5436b7; 
+        AUTHORISED_SIGNER = 0x97EaE183E6CB0D192d5820494d694312bd5436b7; 
 		SIGNATURE_VALIDITY = 5 minutes;
 		
         PRICE = 0.0928 ether;
-		MAX_MINTS_PER_TOKEN_RD = 1; // NOTE: can be excluded
+		MAX_MINTS_PER_TOKEN_RD = 1; 
         MAX_MINTS_PER_ADDR_PUBLIC = 2;
-		MAX_MINTS_PER_SPOT_VL = 1; // NOTE: can be excluded
+		MAX_MINTS_PER_SPOT_VL = 1; 
 		MAX_AMOUNT_FOR_SALE = 5928;
 		
-        START_TIME_VL = 1682830652;
-        END_TIME_VL = START_TIME_VL + 8 hours;
+		START_TIME_RD = 1682830652;
+        END_TIME_RD = START_TIME_RD + 8 hours;
+        START_TIME_VL = START_TIME_RD;
+        END_TIME_VL = END_TIME_RD;
         START_TIME_PUBLIC = END_TIME_VL;
         END_TIME_PUBLIC = START_TIME_PUBLIC + 100 days;
 	}
