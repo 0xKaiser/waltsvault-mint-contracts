@@ -110,22 +110,22 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		uint256 amountVL,
 		uint256 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
-		orderInfo memory spotsVL
+		orderInfo memory spotsDataVL
 	) external payable {
         uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
-        require(PRICE * amtTOTAL == msg.value, "mint: unacceptable payment");
-        require(MAX_AMOUNT_FOR_SALE >= WALTS_VAULT.totalSupply() + amtTOTAL, "mint: unacceptable amount");
+        require(PRICE * amountTOTAL == msg.value, "mint: unacceptable payment");
+        require(MAX_AMOUNT_FOR_SALE >= WALTS_VAULT.totalSupply() + amountTOTAL, "mint: unacceptable amount");
 
-        if(tokensToLockRD.length){
+        if(tokensToLockRD.length > 0){
             _ravendaleMint(amountRD, tokensToLockRD);
 		}
 		
-		if(amountVL){
+		if(amountVL > 0){
             _vaultListMint(amountVL, spotsDataVL);
 		}
 		
-		if(amountPUBLIC){
+		if(amountPUBLIC > 0){
             _publicMint(amountPUBLIC);
 		}
 	}
@@ -148,7 +148,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 			emit RavendaleClaim(msg.sender, tokensToLockRD[i]);
 		}
 		
-		if(amountRD){
+		if(amountRD > 0){
 			require(END_TIME_VL >= block.timestamp, "ravendale: sale over");
 			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amountRD, "ravendale: unacceptable amount");
 			
@@ -159,23 +159,21 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	}
 
 	function _vaultListMint(
-		uint256 amtVL,
-		orderInfo memory spotsVL
+		uint256 amountVL,
+		orderInfo memory spotsDataVL
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "vault list: sale not started");
 		require(block.timestamp <= END_TIME_VL, "vault list: sale over");
 		
-		require(block.timestamp < spotsVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
-		require(getSigner(spotsVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
-		require(!isSignatureUsed[spotsVL.signature], "vault list: used signature");		
-		require(AUTHORISED_SIGNER == getSigner(spotsDataVL), "vault list: unauthorised signer");
+		require(block.timestamp < spotsDataVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
+		require(getSigner(spotsDataVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
 		require(!isSignatureUsed[spotsDataVL.signature], "vault list: used signature");
-		
 		require(spotsDataVL.userAddress == msg.sender, "vault list: unauthorised address");
+		
 		require(MAX_MINTS_PER_SPOT_VL * spotsDataVL.allocatedSpots >= vlMintsBy[msg.sender] + amountVL, "vault list: unacceptable amount");
 	
-		isSignatureUsed[spotsVL.signature] = true;
-		vlMintsBy[msg.sender] += amtVL;
+		isSignatureUsed[spotsDataVL.signature] = true;
+		vlMintsBy[msg.sender] += amountVL;
 		
 //		WALTS_VAULT.airdrop([msg.sender], [amtVL]);
 	
@@ -188,7 +186,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 		require(START_TIME_PUBLIC <= block.timestamp, "public: sale not started");
 		require(END_TIME_PUBLIC >= block.timestamp, "public: sale over");
 		
-		publicMintsBy[msg.sender] += amtPUBLIC;
+		publicMintsBy[msg.sender] += amountPUBLIC;
 //		WALTS_VAULT.airdrop([msg.sender], [amtPUBLIC]);
 		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amountPUBLIC, "public: unacceptable amount");
 		
@@ -202,11 +200,13 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	) external onlyOwner {
 		for(uint256 j=0; j<lockers.length; j++){
 			uint256[] memory tokensToRelease = tokensLockedBy[lockers[j]];
-				for(uint256 i=0; i<tokensToReturn.length; i++){
-				RAVENDALE.safeTransferFrom(address(this), lockers[j], tokensToReturn[i]);
-				lockerOf[tokensToReturn[i]] = address(0);
-				delete tokensLockedBy[lockers[j]];
-				emit ReleaseRavendale(lockers[j], tokensToRelease[i]);
+			
+				for(uint256 i=0; i<tokensToRelease.length; i++){
+					lockerOf[tokensToRelease[i]] = address(0);
+					delete tokensLockedBy[lockers[j]];
+					RAVENDALE.safeTransferFrom(address(this), lockers[j], tokensToRelease[i]);
+					
+					emit ReleaseRavendale(lockers[j], tokensToRelease[i]);
 			}
 		}
 	}
@@ -233,6 +233,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 	
 	function setSignatureValidityTime(uint16 validityTime) external onlyOwner {
 		SIGNATURE_VALIDITY = validityTime;
+	}
 	
 	function setPrice(uint256 _price) external onlyOwner {
 		PRICE = _price;
