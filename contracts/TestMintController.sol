@@ -94,7 +94,7 @@ contract TestMintController is OwnableUpgradeable, Signer {
             _publicMint(amountPUBLIC);
 		}
 
-		amountSold += amountTOTAL;
+		amountSold += uint16(amountTOTAL);
 	}
 
 
@@ -120,7 +120,7 @@ contract TestMintController is OwnableUpgradeable, Signer {
 			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amountRD, "ravendale: unacceptable amount");
 			rdMintsBy[msg.sender] += amountRD;
 			
-			(address[] memory receiver, uint256[] memory AmountRD) = makeArray(msg.sender, amountRD);
+			(address[] memory receiver, uint256[] memory AmountRD) = _makeArray(msg.sender, amountRD);
 			WV.airdrop(receiver, AmountRD);
 			
 			emit RavendaleMint(msg.sender, amountRD);
@@ -143,7 +143,7 @@ contract TestMintController is OwnableUpgradeable, Signer {
 		isSignatureUsed[spotsDataVL.signature] = true;
 		vlMintsBy[msg.sender] += amountVL;
 		
-		(address[] memory receiver, uint256[] memory AmountVL) = makeArray(spotsDataVL.userAddress, amountVL);
+		(address[] memory receiver, uint256[] memory AmountVL) = _makeArray(spotsDataVL.userAddress, amountVL);
 		WV.airdrop(receiver, AmountVL);
 	
 		emit VaultListMint(msg.sender, amountVL);
@@ -157,18 +157,20 @@ contract TestMintController is OwnableUpgradeable, Signer {
 		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amountPUBLIC, "public: unacceptable amount");
 		publicMintsBy[msg.sender] += amountPUBLIC;
 		
-		(address[] memory receiver, uint256[] memory amount) = makeArray(msg.sender, amountPUBLIC);
+		(address[] memory receiver, uint256[] memory amount) = _makeArray(msg.sender, amountPUBLIC);
 		WV.airdrop(receiver, amount);
 		
 		emit PublicMint(msg.sender, amountPUBLIC);
 	}
 	
-	function makeArray(address userAddress, uint256 totalTokens) internal pure returns (address[] memory addressArray, uint256[] memory tokenArray) {
+	
+	function _makeArray(address userAddress, uint256 totalTokens) internal pure returns (address[] memory addressArray, uint256[] memory tokenArray) {
 		addressArray = new address[](1);
 		tokenArray = new uint256[](1);
 		addressArray[0] = userAddress;
 		tokenArray[0] = totalTokens;
 	}
+	
 
 	// ======== OWNER FUNCTIONS ======== //
         
