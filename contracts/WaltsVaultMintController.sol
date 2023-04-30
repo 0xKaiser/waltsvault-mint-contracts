@@ -72,11 +72,11 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
     mapping(bytes => bool) private isSignatureUsed;
 	mapping(address => bool) public controllers;
 	
-	event RavendaleFreeClaim(address indexed _claimer, uint256 indexed _tokenId);
+	event RavendaleClaim(address indexed _claimer, uint256 indexed _tokenId);
 	event RavendaleMint(address _minter, uint256 indexed _amount);
 	event VaultListMint(address _minter, uint256 indexed _amount);
 	event PublicMint(address _minter, uint256 indexed _amount);
-	event RavendaleReturn(address indexed _receiver, uint256 indexed _tokenId);
+	event ReleaseRavendale(address indexed _receiver, uint256 indexed _tokenId);
 	
 	
 	function initialize(
@@ -149,7 +149,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer {
 			RAVENDALE.safeTransferFrom(msg.sender, address(this), tokensToLockRD[i]);
 			WALTS_VAULT.safeTransferFrom(address(this), msg.sender, tokensToLockRD[i]);
 			
-			emit RavendaleFreeClaim(msg.sender, tokensToLockRD[i]);
+			emit RavendaleClaim(msg.sender, tokensToLockRD[i]);
 		}
 		
 		if(amtRD > 0){
