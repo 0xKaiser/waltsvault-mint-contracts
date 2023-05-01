@@ -6,7 +6,7 @@ contract Signer is EIP712Upgradeable {
     string private constant SIGNING_DOMAIN = "Walts_Vault";
     string private constant SIGNATURE_VERSION = "1";
 
-    struct orderInfo {
+    struct signedData {
         uint256 nonce;
         uint256 allocatedSpots;
         address userAddress;
@@ -22,26 +22,26 @@ contract Signer is EIP712Upgradeable {
 
     /**
     @dev This function is used to get signer address of signature
-    @param _orderInfo orderInfo object
+    @param _signedData signedData object
     */
-    function getSigner(orderInfo memory _orderInfo) public view returns (address) {
-        return _verifyOrder(_orderInfo);
+    function getSigner(signedData memory _signedData) public view returns (address) {
+        return _verifyOrder(_signedData);
 
     }
     
     /**
     @dev This function is used to generate hash message
-    @param _orderInfo orderInfo object to create hash
+    @param _signedData signedData object to create hash
     */
-    function _orderInfoHash(orderInfo memory _orderInfo) internal view returns (bytes32) {
+    function _signedDataHash(signedData memory _signedData) internal view returns (bytes32) {
         return
         _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    keccak256("orderInfo(uint256 nonce,uint256 allocatedSpots,address userAddress)"),
-                    _orderInfo.nonce,
-                    _orderInfo.allocatedSpots,
-                    _orderInfo.userAddress
+                    keccak256("signedData(uint256 nonce,uint256 allocatedSpots,address userAddress)"),
+                    _signedData.nonce,
+                    _signedData.allocatedSpots,
+                    _signedData.userAddress
                 )
             )
         );
@@ -49,10 +49,10 @@ contract Signer is EIP712Upgradeable {
 
     /**
     @dev This function is used to verify signature
-    @param _orderInfo orderInfo object to verify
+    @param _signedData signedData object to verify
     */
-    function _verifyOrder(orderInfo memory _orderInfo) internal view returns (address) {
-        bytes32 digest = _orderInfoHash(_orderInfo);
-        return ECDSAUpgradeable.recover(digest, _orderInfo.signature);
+    function _verifyOrder(signedData memory _signedData) internal view returns (address) {
+        bytes32 digest = _signedDataHash(_signedData);
+        return ECDSAUpgradeable.recover(digest, _signedData.signature);
     }
 }

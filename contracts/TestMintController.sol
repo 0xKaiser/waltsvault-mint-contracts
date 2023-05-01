@@ -76,7 +76,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		uint256 amountVL,
 		uint256 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
-		orderInfo memory spotsDataVL
+		signedData memory spotsDataVL
 	) external payable whenNotPaused {
         uint256 amountTOTAL = amountRD + amountVL + amountPUBLIC;
 
@@ -122,7 +122,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 			require(MAX_MINTS_PER_TOKEN_RD * tokensToLockRD.length >= amountRD, "ravendale: unacceptable amount");
 			rdMintsBy[msg.sender] += amountRD;
 			
-			(address[] memory receiver, uint256[] memory AmountRD) = _makeArray(msg.sender, amountRD);
+			(address[] memory receiver, uint256[] memory AmountRD) = _getArray(msg.sender, amountRD);
 			WV.airdrop(receiver, AmountRD);
 			
 			emit RavendaleMint(msg.sender, amountRD);
@@ -131,7 +131,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 
 	function _vaultListMint(
 		uint256 amountVL,
-		orderInfo memory spotsDataVL
+		signedData memory spotsDataVL
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "vault list: sale not started");
 		require(block.timestamp <= END_TIME_VL, "vault list: sale over");
@@ -145,7 +145,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		isSignatureUsed[spotsDataVL.signature] = true;
 		vlMintsBy[msg.sender] += amountVL;
 		
-		(address[] memory receiver, uint256[] memory AmountVL) = _makeArray(spotsDataVL.userAddress, amountVL);
+		(address[] memory receiver, uint256[] memory AmountVL) = _getArray(spotsDataVL.userAddress, amountVL);
 		WV.airdrop(receiver, AmountVL);
 	
 		emit VaultListMint(msg.sender, amountVL);
@@ -159,14 +159,14 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		require(MAX_MINTS_PER_ADDR_PUBLIC >= publicMintsBy[msg.sender] + amountPUBLIC, "public: unacceptable amount");
 		publicMintsBy[msg.sender] += amountPUBLIC;
 		
-		(address[] memory receiver, uint256[] memory amount) = _makeArray(msg.sender, amountPUBLIC);
+		(address[] memory receiver, uint256[] memory amount) = _getArray(msg.sender, amountPUBLIC);
 		WV.airdrop(receiver, amount);
 		
 		emit PublicMint(msg.sender, amountPUBLIC);
 	}
 	
 	
-	function _makeArray(address userAddress, uint256 totalTokens) internal pure returns (address[] memory addressArray, uint256[] memory tokenArray) {
+	function _getArray(address userAddress, uint256 totalTokens) internal pure returns (address[] memory addressArray, uint256[] memory tokenArray) {
 		addressArray = new address[](1);
 		tokenArray = new uint256[](1);
 		addressArray[0] = userAddress;
@@ -247,21 +247,22 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		MAX_MINTS_PER_ADDR_PUBLIC = _amount;
 	}
 	
-	function setStartEndTimeVL(uint32 _start, uint32 _end) external onlyOwner {
-		START_TIME_VL = _start;
-		END_TIME_VL = _end;
+	function setStartEndTime(
+		uint32 _startVL,
+		uint32 _endVL,
+		uint32 _startPB,
+		uint32 _endPB,
+		uint32 _startRD,
+		uint32 _endRD
+	) external onlyOwner {
+		START_TIME_VL = _startVL;
+		END_TIME_VL = _endVL;
+		START_TIME_PUBLIC = _startPB;
+		END_TIME_PUBLIC = _endPB;
+		START_TIME_RD = _startRD;
+		END_TIME_RD = _endRD;
 	}
 	
-	function setStartEndTimePublic(uint32 _start, uint32 _end) external onlyOwner {
-		START_TIME_PUBLIC = _start;
-		END_TIME_PUBLIC = _end;
-	}
-	
-	function setStartEndTimeRavendale(uint32 _start, uint32 _end) external onlyOwner {
-		START_TIME_RD = _start;
-		END_TIME_RD = _end;
-	}
-
 	// ======== READ FUNCTIONS ======== //
 
 	function getTokensLockedByAddr(address addr) external view returns(uint256[] memory){

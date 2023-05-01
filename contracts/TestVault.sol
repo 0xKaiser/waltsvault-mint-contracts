@@ -5,7 +5,6 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ERC721AUpgradeable} from "./utils/ERC721AUpgradeable.sol";
 import {RevokableOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableOperatorFiltererUpgradeable.sol";
 import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/RevokableDefaultOperatorFiltererUpgradeable.sol";
-import {UpdatableOperatorFilterer} from "./OpenseaRegistries/UpdatableOperatorFilterer.sol";
 import {RaritySigner} from "./utils/RaritySigner.sol";
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 
@@ -40,6 +39,7 @@ contract TestVault is
         uint256[] calldata amount
     ) external onlyController(msg.sender) {
         require(to.length == amount.length, "Invalid Input");
+        
         for(uint256 i = 0; i < to.length; i++) {
             require(maxSupply >= totalSupply() + amount[i]);
             _mint(to[i],amount[i]);
@@ -62,7 +62,7 @@ contract TestVault is
     }
     
     // OpenSea Operator Filterer
-    function _startTokenId() internal view virtual override returns (uint256) {
+    function _startTokenId() internal pure override returns (uint256) {
         return 1;
     }
     
@@ -78,29 +78,16 @@ contract TestVault is
         super.transferFrom(from, to, tokenId);
     }
     
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override onlyAllowedOperator(from) {
-        super.safeTransferFrom(from, to, tokenId);
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
-        public
-        override
-        onlyAllowedOperator(from)
-    {
-        super.safeTransferFrom(from, to, tokenId, data);
-    }
-    
     function owner()
         public
         view
-        virtual
         override (OwnableUpgradeable, RevokableOperatorFiltererUpgradeable)
         returns (address)
     {
         return OwnableUpgradeable.owner();
     }
     
-    function _baseURI() internal view virtual override returns (string memory) {
+    function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
 }
