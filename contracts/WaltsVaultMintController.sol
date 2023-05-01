@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {ITestNFT} from "./Interfaces/ITestNFT.sol";
+import {IWaltsVaultNFT} from "./Interfaces/IWaltsVaultNFT.sol";
 import {Signer} from "./utils/Signer.sol";
 
-contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
+contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 	
-	ITestNFT public RD;
-	ITestNFT public WV;
+	IWaltsVaultNFT public ravendale;
+	IWaltsVaultNFT public waltsVault;
 	
 	address public TREASURY;
 	address public AUTHORISED_SIGNER;
@@ -50,8 +50,8 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		__Signer_init();
 		__Pausable_init();
 		
-        RD = ITestNFT(0xBeb297284e6D4E5b020e200C99E93400f21b2Cd7);
-		WV = ITestNFT(0xDa67FD1Cb01a81dADec6727b9D0B74a8F2Dc1437);
+		ravendale = IWaltsVaultNFT(0xBeb297284e6D4E5b020e200C99E93400f21b2Cd7);
+		waltsVault = IWaltsVaultNFT(0xDa67FD1Cb01a81dADec6727b9D0B74a8F2Dc1437);
                 
 		TREASURY = 0x97EaE183E6CB0D192d5820494d694312bd5436b7; 
         AUTHORISED_SIGNER = 0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6;
@@ -111,8 +111,8 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 			tokensLockedBy[msg.sender].push(tokensToLockRD[i]);
 			lockerOf[tokensToLockRD[i]] = msg.sender;
 			
-			RD.safeTransferFrom(msg.sender, address(this), tokensToLockRD[i]);
-			WV.safeTransferFrom(address(this), msg.sender, tokensToLockRD[i]);
+			ravendale.safeTransferFrom(msg.sender, address(this), tokensToLockRD[i]);
+			waltsVault.safeTransferFrom(address(this), msg.sender, tokensToLockRD[i]);
 			
 			emit RavendaleClaim(msg.sender, tokensToLockRD[i]);
 		}
@@ -123,7 +123,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 			rdMintsBy[msg.sender] += amountRD;
 			
 			(address[] memory receiver, uint256[] memory AmountRD) = _getArray(msg.sender, amountRD);
-			WV.airdrop(receiver, AmountRD);
+			waltsVault.airdrop(receiver, AmountRD);
 			
 			emit RavendaleMint(msg.sender, amountRD);
 		}
@@ -146,7 +146,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		vlMintsBy[msg.sender] += amountVL;
 		
 		(address[] memory receiver, uint256[] memory AmountVL) = _getArray(spotsDataVL.userAddress, amountVL);
-		WV.airdrop(receiver, AmountVL);
+		waltsVault.airdrop(receiver, AmountVL);
 	
 		emit VaultListMint(msg.sender, amountVL);
 	}
@@ -160,7 +160,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 		publicMintsBy[msg.sender] += amountPUBLIC;
 		
 		(address[] memory receiver, uint256[] memory amount) = _getArray(msg.sender, amountPUBLIC);
-		WV.airdrop(receiver, amount);
+		waltsVault.airdrop(receiver, amount);
 		
 		emit PublicMint(msg.sender, amountPUBLIC);
 	}
@@ -196,7 +196,7 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 				for(uint256 i=0; i<tokensToRelease.length; i++){
 					lockerOf[tokensToRelease[i]] = address(0);
 					delete tokensLockedBy[lockers[j]];
-					RD.safeTransferFrom(address(this), lockers[j], tokensToRelease[i]);
+					ravendale.safeTransferFrom(address(this), lockers[j], tokensToRelease[i]);
 					
 					emit ReleaseRavendale(lockers[j], tokensToRelease[i]);
 			}
@@ -208,11 +208,11 @@ contract TestMintController is OwnableUpgradeable, Signer, PausableUpgradeable {
 	}
 	
     function setRavendaleAddr(address _ravendale) external onlyOwner {
-		RD = ITestNFT(_ravendale);
+	    ravendale = IWaltsVaultNFT(_ravendale);
 	}
 
     function setWaltsVaultAddr(address _waltsVault) external onlyOwner {
-        WV = ITestNFT(_waltsVault);
+        waltsVault = IWaltsVaultNFT(_waltsVault);
     }
 	
 	function setTreasury(address _treasury) external onlyOwner {

@@ -8,7 +8,7 @@ import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/R
 import {RaritySigner} from "./utils/RaritySigner.sol";
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 
-contract TestVault is
+contract WaltsVaultVault is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     RaritySigner,
