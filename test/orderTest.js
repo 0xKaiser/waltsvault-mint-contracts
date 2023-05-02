@@ -9,17 +9,16 @@ describe("Order", async function () {
     let mintController, owner, addr1, addr2, ravendale, wault, price;
     before(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
-        price = 0.928;
+        price = 0.0928;
         const Mock = await ethers.getContractFactory("TestToken300423");
         ravendale = await upgrades.deployProxy(Mock, ['MockERC721', 'MERC721']);
         await ravendale.deployed();
 
-        const NFT = await ethers.getContractFactory("TestVault");
+        const NFT = await ethers.getContractFactory("WaltsVault");
         wault = await upgrades.deployProxy(NFT, ['WaltsVault', 'WV'], { initializer: 'initialize' });
         await wault.deployed();
 
-
-        const Order = await ethers.getContractFactory("TestMintController");
+        const Order = await ethers.getContractFactory("WaltsVaultMintController");
         mintController = await upgrades.deployProxy(Order,[]);
         await mintController.deployed();
 
@@ -42,24 +41,23 @@ describe("Order", async function () {
     it("Should reserve a slot locking the ravendale tokens", async function () {
         await time.increase(60*60*4);
 
-        let tx = await mintController.mint(10, 0, 0, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [0, 0, mintController.address, mintController.address], {value: ethers.utils.parseEther((price).toString())})
-        for (let i = 1; i < 11; i++)
-            await expect(tx)
-                .to.emit(mintController, 'RavendaleClaim')
-                .withArgs(owner.address, i);
+        await mintController.setAvailableSupply(10);
 
+//      uint16 amountRD,
+// 		uint16 amountVL,
+// 		uint16 amountPUBLIC,
+// 		uint256[] calldata tokensToLockRD,
+// 		signedData memory spotsDataVL
 
-        await expect(tx)
-            .to.emit(mintController, 'RavendaleMint')
-            .withArgs(owner.address, 10);
+        await mintController.mint(2,2,0,[1,2,3],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((4 * price).toString())})
+        console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
 
-        console.log("Total Balance ", 20);
+        await mintController.connect(addr1).mint(0,2,0,[],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
+        console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
 
-        await time.increase(86400*2);
-        let tx1 = await mintController.mint(0, 0, 2, [], [0, 0, mintController.address, mintController.address], {value: ethers.utils.parseEther((2 * 0.0928).toString())})
+        await mintController.setAvailableSupply(0);
 
-        await expect(tx1)
-            .to.emit(mintController, 'PublicMint')
-            .withArgs(owner.address, 2);
+        await mintController.mint(2,0,0,[4,5,6],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
+        console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
     })
 })

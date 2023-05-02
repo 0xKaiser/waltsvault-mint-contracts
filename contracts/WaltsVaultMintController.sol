@@ -19,6 +19,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 	
 	uint16 public MAX_MINTS_PER_ADDR_PUBLIC;
 	uint16 public MAX_AMOUNT_FOR_SALE;
+	uint16 public AVAILABLE_AMOUNT_FOR_VL;
 	uint16 public SIGNATURE_VALIDITY;
 	
 	uint32 public START_TIME_RD;
@@ -62,8 +63,9 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 		MAX_MINTS_PER_SPOT_VL = uint8(1);
 		MAX_MINTS_PER_ADDR_PUBLIC = uint16(2);
 		MAX_AMOUNT_FOR_SALE = uint16(5928);
+		AVAILABLE_AMOUNT_FOR_VL = MAX_AMOUNT_FOR_SALE - uint16(928);
 		
-		START_TIME_RD = uint32(1682847540);
+		START_TIME_RD = uint32(1683031962);
         END_TIME_RD = START_TIME_RD + uint32(8 hours);
         START_TIME_VL = START_TIME_RD;
         END_TIME_VL = END_TIME_RD;
@@ -72,9 +74,9 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 	}
 	
 	function mint(
-        uint256 amountRD,
-		uint256 amountVL,
-		uint256 amountPUBLIC,
+        uint16 amountRD,
+		uint16 amountVL,
+		uint16 amountPUBLIC,
 		uint256[] calldata tokensToLockRD,
 		signedData memory spotsDataVL
 	) external payable whenNotPaused {
@@ -82,7 +84,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 
         require(PRICE * amountTOTAL == msg.value, "mint: unacceptable payment");
 
-        require(MAX_AMOUNT_FOR_SALE >= amountSold + amountTOTAL, "mint: unacceptable amount");
+        require(MAX_AMOUNT_FOR_SALE  >= amountSold + amountTOTAL, "mint: unacceptable amount");
 
         if(tokensToLockRD.length > 0){
             _ravendaleMint(amountRD, tokensToLockRD);
@@ -103,7 +105,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
     // ======== INTERNAL FUNCTIONS ======== //
 
 	function _ravendaleMint(
-		uint256 amountRD,
+		uint16 amountRD,
 		uint256[] calldata tokensToLockRD
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "ravendale: sale not started");
@@ -127,23 +129,28 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 			
 			emit RavendaleMint(msg.sender, amountRD);
 		}
+		
+		AVAILABLE_AMOUNT_FOR_VL += uint16(tokensToLockRD.length) - amountRD;
 	}
 
 	function _vaultListMint(
-		uint256 amountVL,
+		uint16 amountVL,
 		signedData memory spotsDataVL
 	) internal {
 		require(START_TIME_VL <= block.timestamp, "vault list: sale not started");
 		require(block.timestamp <= END_TIME_VL, "vault list: sale over");
+		require(amountVL <= AVAILABLE_AMOUNT_FOR_VL, "vault list: unavailable amount");
 		
 		require(block.timestamp < spotsDataVL.nonce + SIGNATURE_VALIDITY, "vault list: expired nonce");
 		require(getSigner(spotsDataVL) == AUTHORISED_SIGNER, "vault list: unauthorised signer");
 		require(!isSignatureUsed[spotsDataVL.signature], "vault list: used signature");
 		require(spotsDataVL.userAddress == msg.sender, "vault list: unauthorised address");
+	
 		require(MAX_MINTS_PER_SPOT_VL * spotsDataVL.allocatedSpots >= vlMintsBy[msg.sender] + amountVL, "vault list: unacceptable amount");
 	
 		isSignatureUsed[spotsDataVL.signature] = true;
 		vlMintsBy[msg.sender] += amountVL;
+		AVAILABLE_AMOUNT_FOR_VL -= amountVL;
 		
 		(address[] memory receiver, uint256[] memory AmountVL) = _getArray(spotsDataVL.userAddress, amountVL);
 		waltsVault.airdrop(receiver, AmountVL);
@@ -152,7 +159,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 	}
 	
 	function _publicMint(
-		uint256 amountPUBLIC
+		uint16 amountPUBLIC
 	) internal {
 		require(START_TIME_PUBLIC <= block.timestamp, "public: sale not started");
 		require(END_TIME_PUBLIC >= block.timestamp, "public: sale over");

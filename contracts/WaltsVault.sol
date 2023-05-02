@@ -8,7 +8,7 @@ import {RevokableDefaultOperatorFiltererUpgradeable} from "./OpenseaRegistries/R
 import {RaritySigner} from "./utils/RaritySigner.sol";
 import {IMerkel} from "./Interfaces/IMerkel.sol";
 
-contract WaltsVaultVault is
+contract WaltsVault is
     OwnableUpgradeable,
     ERC721AUpgradeable,
     RaritySigner,
