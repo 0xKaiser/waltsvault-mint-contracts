@@ -199,12 +199,10 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 	) external onlyOwner {
 		for(uint256 j=0; j<lockers.length; j++){
 			uint256[] memory tokensToRelease = tokensLockedBy[lockers[j]];
-			
+			delete tokensLockedBy[lockers[j]];
 				for(uint256 i=0; i<tokensToRelease.length; i++){
 					lockerOf[tokensToRelease[i]] = address(0);
-					delete tokensLockedBy[lockers[j]];
 					ravendale.safeTransferFrom(address(this), lockers[j], tokensToRelease[i]);
-					
 					emit ReleaseRavendale(lockers[j], tokensToRelease[i]);
 			}
 		}
