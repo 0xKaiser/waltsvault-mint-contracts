@@ -51,10 +51,10 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 		__Signer_init();
 		__Pausable_init();
 		
-		ravendale = IWaltsVaultNFT(0xBeb297284e6D4E5b020e200C99E93400f21b2Cd7);
-		waltsVault = IWaltsVaultNFT(0xDa67FD1Cb01a81dADec6727b9D0B74a8F2Dc1437);
+		ravendale = IWaltsVaultNFT(0xf83A99E084C1D575AF8e12FF492F5E6C7b768b48);
+		waltsVault = IWaltsVaultNFT(0x9980b3aA61114B07A7604FfDC7C7D04bb6D8d735);
                 
-		TREASURY = 0x97EaE183E6CB0D192d5820494d694312bd5436b7; 
+		TREASURY = 0x2F86b325E8FfeE20703C93A8F28Ab7a5Dd711b7E;
         AUTHORISED_SIGNER = 0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6;
 		SIGNATURE_VALIDITY = uint16(5 minutes);
 		
