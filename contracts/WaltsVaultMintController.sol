@@ -58,11 +58,11 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
         AUTHORISED_SIGNER = 0xA4CC419dB3F709B2E2f3f9Eb06B6cEC14DeDdDC6;
 		SIGNATURE_VALIDITY = uint16(5 minutes);
 		
-        PRICE = 0.0928 ether;
+        PRICE = 0.0628 ether;
 		MAX_MINTS_PER_TOKEN_RD = uint8(1);
 		MAX_MINTS_PER_SPOT_VL = uint8(1);
 		MAX_MINTS_PER_ADDR_PUBLIC = uint16(2);
-		MAX_AMOUNT_FOR_SALE = uint16(5928);
+		MAX_AMOUNT_FOR_SALE = uint16(5960);
 		AVAILABLE_AMOUNT_FOR_VL = MAX_AMOUNT_FOR_SALE - uint16(928);
 		
 		START_TIME_RD = uint32(1683031962);
