@@ -7,6 +7,7 @@ async function main() {
     const WaltsVaultMintController = await ethers.getContractFactory('WaltsVaultMintController');
     const mintController = await upgrades.deployProxy(WaltsVaultMintController, []);
     await mintController.deployed()
+
     console.log('---------------------------')
     console.log('deployer address: ', owner.address);
     console.log('MintController deployed at:', mintController.address);

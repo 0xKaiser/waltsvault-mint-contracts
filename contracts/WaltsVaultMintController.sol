@@ -102,7 +102,7 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 		MAX_AMOUNT_FOR_SALE = uint16(5960);
 		AVAILABLE_AMOUNT_FOR_VL = MAX_AMOUNT_FOR_SALE - uint16(928);
 		
-		START_TIME_RD = uint32(1683031962);
+		START_TIME_RD = uint32(1683118800);
         END_TIME_RD = START_TIME_RD + uint32(8 hours);
         START_TIME_VL = START_TIME_RD;
         END_TIME_VL = END_TIME_RD;
