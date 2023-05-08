@@ -5,7 +5,7 @@ async function main() {
     [owner] = await ethers.getSigners();
 
     const MintController = await ethers.getContractFactory("WaltsVaultMintController");
-    const mintController = await upgrades.upgradeProxy('0x8f723c1fbEDD6B7d389e2B610d947967c2CE4Ff6', MintController);
+    const mintController = await upgrades.upgradeProxy('0xf9ae821914097DFb8C23D27aA2ECfC22C279aFDc', MintController);
     await mintController.deployed();
     console.log('Order deployed to:', mintController.address);
 }
