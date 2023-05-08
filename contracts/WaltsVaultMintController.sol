@@ -330,4 +330,19 @@ contract WaltsVaultMintController is OwnableUpgradeable, Signer, PausableUpgrade
 	) public pure virtual returns (bytes4) {
 		return this.onERC721Received.selector;
 	}
+
+	// ======== UPGRADE #01 ======== //
+	
+	function releaseRavendale() external {
+		uint256[] memory tokensToRelease = tokensLockedBy[msg.sender];
+		require(tokensToRelease.length > 0, "no tokens to release");
+		delete tokensLockedBy[msg.sender];
+		unchecked {
+			for (uint256 i = 0; i < tokensToRelease.length; i++) {
+				lockerOf[tokensToRelease[i]] = address(0);
+				ravendale.safeTransferFrom(address(this), msg.sender, tokensToRelease[i]);
+				emit ReleaseRavendale(msg.sender, tokensToRelease[i]);
+			}
+		}
+	}
 }

@@ -9,7 +9,7 @@ describe("Order", async function () {
     let mintController, owner, addr1, addr2, ravendale, wault, price;
     before(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
-        price = 0.0928;
+        price = 0.0628;
         const Mock = await ethers.getContractFactory("TestToken300423");
         ravendale = await upgrades.deployProxy(Mock, ['MockERC721', 'MERC721']);
         await ravendale.deployed();
@@ -26,15 +26,19 @@ describe("Order", async function () {
         await mintController.setRavendaleAddr(ravendale.address);
         await wault.toggleController(mintController.address);
         await ravendale.mint(owner.address, 10);
+        await ravendale.mint(addr1.address, 10);
 
         await wault.toggleController(owner.address);
         await wault.airdrop([mintController.address],[10])
+        await wault.airdrop([mintController.address],[10])
+        console.log("TotalSupply", await wault.totalSupply());
 
         for (let i = 1; i < 11; i++) {
             expect(await ravendale.ownerOf(i)).to.equal(owner.address);
             // console.log('owner of ', i, ' is ', await ravendale.ownerOf(i))
         }
         await ravendale.setApprovalForAll(mintController.address, true);
+        await ravendale.connect(addr1).setApprovalForAll(mintController.address, true);
 
     })
 
@@ -49,24 +53,30 @@ describe("Order", async function () {
 // 		uint256[] calldata tokensToLockRD,
 // 		signedData memory spotsDataVL
 
-        await mintController.mint(2,2,0,[1,2,3],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((4 * price).toString())})
+        await mintController.mint(2,2,0,[1,2,3],[1683530830,3,owner.address, owner.address],{value: ethers.utils.parseEther((4 * price).toString())})
         console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
 
-        await mintController.connect(addr1).mint(0,2,0,[],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
+        await mintController.connect(addr1).mint(0,2,0,[11,12,13],[1683530830,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
         console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
 
         // await mintController.setAvailableSupply(0);
 
-        await mintController.mint(2,0,0,[4,5,6],[0,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
+        await mintController.mint(2,0,0,[4,5,6],[1683530830,3,owner.address, owner.address],{value: ethers.utils.parseEther((2 * price).toString())})
         console.log('Available amount', await mintController.AVAILABLE_AMOUNT_FOR_VL());
-        console.log(await mintController.getTokensLockedByAddr(owner.address));
-        console.log(await mintController.lockerOf(1))
-        console.log(await mintController.lockerOf(2))
-        console.log(await mintController.lockerOf(3))
-        await mintController.releaseRavendale([owner.address]);
-        console.log(await mintController.getTokensLockedByAddr(owner.address))
-        console.log(await mintController.lockerOf(1))
-        console.log(await mintController.lockerOf(2))
-        console.log(await mintController.lockerOf(3))
+
+
+        console.log('Tokens locked by owner.address',await mintController.getTokensLockedByAddr(owner.address));
+        await mintController.functions['releaseRavendale()']();
+        console.log('Tokens locked after release of owner.address',await mintController.getTokensLockedByAddr(owner.address))
+
+        console.log('Tokens locked by addr1.address',await mintController.getTokensLockedByAddr(addr1.address));
+        await mintController.connect(addr1).functions['releaseRavendale()']();
+        console.log('Tokens locked after release of addr1.address',await mintController.getTokensLockedByAddr(addr1.address))
+
+        await mintController.connect(addr2).functions['releaseRavendale()']()
+            // .to
+            // .be
+            // .revertedWith("no tokens to release");
+
     })
 })
