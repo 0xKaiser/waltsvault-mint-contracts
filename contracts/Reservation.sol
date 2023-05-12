@@ -50,6 +50,7 @@ contract Reservation is OwnableUpgradeable, Signer {
     mapping(bytes => bool) private isSignatureUsed;
     mapping(address => bool) public hasClaimedRefund;
     mapping(address => bool) public controllers;
+    mapping (uint256 => uint256) public rarity;
     
     function initialize(
         address _ravendaleAddr,
