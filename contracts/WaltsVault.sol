@@ -90,4 +90,10 @@ contract WaltsVault is
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
+    
+    // ======== UPGRADE #01 ======== //
+    
+    function burnToken(uint256 tokenId) external onlyController(msg.sender) {
+        _burn(tokenId);
+    }
 }

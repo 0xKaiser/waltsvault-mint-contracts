@@ -9,4 +9,6 @@ interface IWaltsVaultNFT is IERC721Upgradeable {
         address[] calldata to,
         uint256[] calldata amount
     ) external;
+    
+    function burnToken(uint256 tokenId) external;
 }
